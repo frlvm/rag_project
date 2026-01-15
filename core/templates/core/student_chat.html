@@ -1,0 +1,17 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<h2>Чат с системой</h2>
+
+<form method="post">
+  {% csrf_token %}
+  <textarea name="question" rows="4" cols="60"
+            placeholder="Введите вопрос..."></textarea><br><br>
+  <button type="submit">Отправить</button>
+</form>
+
+{% if answer %}
+  <h3>Ответ:</h3>
+  <p>{{ answer }}</p>
+{% endif %}
+{% endblock %}

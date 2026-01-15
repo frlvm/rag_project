@@ -1,0 +1,28 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<h2>Мои документы</h2>
+
+<a href="{% url 'upload_document' %}">Загрузить документ</a>
+
+<table border="1">
+    <tr>
+        <th>Название</th>
+        <th>Файл</th>
+        <th>Дата загрузки</th>
+    </tr>
+
+    {% for doc in documents %}
+    <tr>
+        <td>{{ doc.title }}</td>
+        <td><a href="{{ doc.file.url }}">Скачать</a></td>
+        <td>{{ doc.uploaded_at }}</td>
+    </tr>
+    {% empty %}
+    <tr>
+        <td colspan="3">Документов пока нет</td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}
