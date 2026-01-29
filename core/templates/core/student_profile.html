@@ -1,0 +1,44 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'core/css/student_profile.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="profile-wrapper">
+  <!-- Заголовок -->
+  <h1>Профиль студента</h1>
+
+  <!-- Карточка с информацией о студенте -->
+  <div class="profile-card">
+    <p><strong>ФИО:</strong> {{ student.full_name }}</p>
+    <p><strong>Институт:</strong> {{ student.institute }}</p>
+    <p><strong>Курс:</strong> {{ student.course }}</p>
+  </div>
+
+  <!-- Кнопка добавления предмета -->
+  <div class="subjects">
+    <a href="{% url 'add_subject_for_student' %}" class="subject-btn">
+      ＋ Добавить предмет
+    </a>
+  </div>
+
+  <!-- Список предметов -->
+  <h2>Мои предметы</h2>
+
+  {% if subjects %}
+    <div class="subject-grid">
+      {% for subject in subjects %}
+        <a href="{% url 'student_chat' subject.id %}" class="subject-card">
+          {{ subject.name }}
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="empty-text">
+      Предметы пока не добавлены. Начните с добавления первого предмета.
+    </p>
+  {% endif %}
+</div>
+{% endblock %}

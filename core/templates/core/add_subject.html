@@ -1,0 +1,33 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'core/css/add_subject.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+  <div class="form-card">
+    <h1>Новый предмет</h1>
+
+    {% if messages %}
+      {% for message in messages %}
+        <div class="message message-{{ message.tags }}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="post" class="subject-form">
+      {% csrf_token %}
+      
+      <!-- Вместо ручного рендеринга полей, используйте form.as_p или цикл -->
+      {{ form.as_p }}
+
+      
+      <button type="submit" class="form-submit-btn">
+        Добавить предмет
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

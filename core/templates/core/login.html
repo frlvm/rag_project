@@ -1,11 +1,28 @@
-{% extends 'core/base.html' %}
+{% extends "core/base.html" %}
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'core/css/login.css' %}">
+{% endblock %}
 
 {% block content %}
-<h2>Вход в систему</h2>
+<div class="login-wrapper">
+  <div class="login-card">
+    <h1>Вход в систему</h1>
+    <p>RAG-поиск по учебным материалам</p>
 
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Войти</button>
-</form>
+    <form method="post">
+      {% csrf_token %}
+      
+      <!-- Поля формы с классами для стилизации -->
+      <div class="input-group">
+        <input type="text" name="username" class="input-field" placeholder="Ваш логин" required>
+      </div>
+      <div class="input-group">
+        <input type="password" name="password" class="input-field" placeholder="Ваш пароль" required>
+      </div>
+
+      <button type="submit" class="primary-btn">Войти</button>
+    </form>
+  </div>
+</div>
 {% endblock %}

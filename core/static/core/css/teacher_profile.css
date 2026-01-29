@@ -1,0 +1,252 @@
+/* ===== ОСНОВНОЙ КОНТЕЙНЕР ===== */
+.profile-wrapper {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+/* ===== ЗАГОЛОВКИ ===== */
+.profile-wrapper h1 {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--black);
+    margin-bottom: 32px;
+    letter-spacing: -0.5px;
+}
+
+/* ===== ШАПКА РАЗДЕЛА С ПРЕДМЕТАМИ ===== */
+.profile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 48px 0 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.profile-header h2 {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--black);
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+/* ===== КНОПКИ ===== */
+.primary-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 24px;
+    background: var(--black);
+    color: var(--white);
+    font-size: 15px;
+    font-weight: 500;
+    text-decoration: none;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--black);
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.primary-btn:hover {
+    background: var(--white);
+    color: var(--black);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.primary-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.primary-btn.small {
+    padding: 10px 20px;
+    font-size: 14px;
+}
+
+/* ===== КАРТОЧКА ПРОФИЛЯ ПРЕПОДАВАТЕЛЯ ===== */
+.profile-card {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    padding: 32px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--gray-200);
+    margin-bottom: 40px;
+    position: relative;
+    overflow: hidden;
+}
+
+.profile-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--gray-900) 0%, var(--gray-700) 100%);
+}
+
+.profile-card p {
+    font-size: 18px;
+    color: var(--gray-900);
+    margin: 0;
+    line-height: 1.5;
+    display: flex;
+    align-items: baseline;
+}
+
+.profile-card strong {
+    font-weight: 600;
+    color: var(--black);
+    min-width: 80px;
+    display: inline-block;
+    margin-right: 12px;
+}
+
+/* ===== СЕТКА ПРЕДМЕТОВ ПРЕПОДАВАТЕЛЯ ===== */
+.subject-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 24px;
+    margin-top: 24px;
+}
+
+.subject-card {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    padding: 28px 24px;
+    text-decoration: none;
+    color: var(--gray-900);
+    transition: all 0.3s ease;
+    display: block;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+}
+
+.subject-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--gray-800) 0%, var(--gray-600) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.subject-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--gray-300);
+    color: var(--black);
+}
+
+.subject-card:hover::before {
+    opacity: 1;
+}
+
+.subject-card:active {
+    transform: translateY(-2px);
+}
+
+/* Текст внутри карточки предмета */
+.subject-card {
+    font-size: 18px;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+.subject-card small {
+    display: block;
+    font-size: 14px;
+    color: var(--gray-600);
+    margin-top: 8px;
+    font-weight: normal;
+    line-height: 1.5;
+}
+
+/* ===== ПУСТОЕ СОСТОЯНИЕ ===== */
+.empty-text {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--gray-500);
+    font-size: 17px;
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    border: 1px dashed var(--gray-300);
+    margin-top: 24px;
+    box-shadow: var(--shadow-sm);
+}
+
+/* ===== АДАПТИВНОСТЬ ===== */
+@media (max-width: 768px) {
+    .profile-wrapper {
+        padding: 30px 16px;
+    }
+    
+    .profile-wrapper h1 {
+        font-size: 28px;
+        margin-bottom: 24px;
+    }
+    
+    .profile-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+        margin: 40px 0 20px;
+    }
+    
+    .profile-header h2 {
+        font-size: 20px;
+    }
+    
+    .profile-card {
+        padding: 24px;
+    }
+    
+    .profile-card p {
+        font-size: 16px;
+    }
+    
+    .subject-grid {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 16px;
+    }
+    
+    .subject-card {
+        padding: 24px 20px;
+    }
+    
+    .primary-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .subject-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .profile-wrapper h1 {
+        font-size: 24px;
+    }
+    
+    .profile-card p {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+    
+    .profile-card strong {
+        min-width: auto;
+        margin-right: 0;
+        margin-bottom: 2px;
+    }
+}

@@ -1,0 +1,589 @@
+/* ===== ОСНОВНОЙ МАКЕТ ЧАТА (УВЕЛИЧЕННЫЙ) ===== */
+.chat-layout {
+    display: grid;
+    grid-template-columns: 1fr 280px; /* Уменьшил боковую панель */
+    gap: 30px;
+    height: calc(100vh - 80px);
+    padding-top: 30px;
+}
+
+/* Увеличиваем основную панель чата */
+.chat-main {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    position: relative;
+}
+
+/* Увеличиваем область сообщений */
+.messages {
+    padding: 30px 35px; /* Увеличил отступы */
+    display: flex;
+    flex-direction: column;
+    gap: 22px; /* Увеличил расстояние между сообщениями */
+    min-height: 100%;
+    background: var(--white);
+    margin: 20px;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--gray-200);
+}
+
+/* Увеличиваем максимальную ширину сообщений */
+.message {
+    display: flex;
+    max-width: 85%; /* Было 80% */
+    animation: fadeIn 0.3s ease;
+}
+
+/* Увеличиваем пузыри сообщений */
+.message-bubble {
+    padding: 16px 20px; /* Увеличил padding */
+    border-radius: var(--radius-md);
+    position: relative;
+    line-height: 1.6;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.2s ease;
+    font-size: 15px; /* Увеличил шрифт */
+}
+
+/* Увеличиваем поле ввода */
+.chat-input {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    background: var(--white);
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius-lg);
+    padding: 14px 18px; /* Увеличил padding */
+    transition: all 0.2s;
+    box-shadow: var(--shadow-sm);
+}
+
+.chat-input textarea {
+    flex: 1;
+    border: none;
+    background: transparent;
+    resize: none;
+    font-family: inherit;
+    font-size: 16px; /* Увеличил шрифт */
+    line-height: 1.5;
+    color: var(--gray-900);
+    outline: none;
+    min-height: 28px; /* Увеличил минимальную высоту */
+    max-height: 150px; /* Увеличил максимальную высоту */
+    padding: 4px 0;
+}
+
+/* Уменьшаем боковую панель */
+.chat-sidebar {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    padding: 20px; /* Уменьшил немного padding */
+    height: fit-content;
+    position: sticky;
+    top: 30px;
+    border: 1px solid var(--gray-200);
+}
+
+/* ===== ШАПКА ЧАТА ===== */
+.chat-header {
+    padding: 24px 30px;
+    background: var(--white);
+    border-bottom: 1px solid var(--gray-200);
+    position: relative;
+    z-index: 10;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.chat-header h1 {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--black);
+    margin-bottom: 4px;
+}
+
+.chat-header .meta {
+    font-size: 14px;
+    color: var(--gray-600);
+    line-height: 1.4;
+}
+
+.online-status {
+    position: absolute;
+    right: 30px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--gray-600);
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    background: #34c759;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* ===== ОБЛАСТЬ СООБЩЕНИЙ ===== */
+.messages-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+    background: linear-gradient(135deg, #f8f9fa 0%, #f1f3f4 100%);
+    position: relative;
+}
+
+.messages {
+    padding: 25px 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-height: 100%;
+    background: var(--white);
+    margin: 20px;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--gray-200);
+}
+
+/* ===== СТИЛИ СООБЩЕНИЙ ===== */
+.message {
+    display: flex;
+    max-width: 80%;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.message.student {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+}
+
+.message.assistant {
+    align-self: flex-start;
+}
+
+.message-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--gray-300);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--gray-700);
+    flex-shrink: 0;
+    margin-top: 4px;
+    box-shadow: var(--shadow-sm);
+}
+
+.student .message-avatar {
+    background: var(--black);
+    color: var(--white);
+    margin-left: 12px;
+    margin-right: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.assistant .message-avatar {
+    margin-right: 12px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: var(--white);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.message-content {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+}
+
+.message-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 2px;
+}
+
+.message-username {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gray-700);
+}
+
+.message-time {
+    font-size: 11px;
+    color: var(--gray-500);
+    font-feature-settings: "tnum";
+}
+
+.message-bubble {
+    padding: 14px 18px;
+    border-radius: var(--radius-md);
+    position: relative;
+    line-height: 1.6;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.2s ease;
+}
+
+.message-bubble:hover {
+    transform: translateY(-1px);
+}
+
+.student .message-bubble {
+    background: var(--black);
+    color: var(--white);
+    border-bottom-right-radius: var(--radius-sm);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.assistant .message-bubble {
+    background: var(--white);
+    color: var(--gray-900);
+    border: 1px solid var(--gray-200);
+    border-bottom-left-radius: var(--radius-sm);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Стрелочки для пузырей */
+.student .message-bubble::after {
+    content: '';
+    position: absolute;
+    right: -6px;
+    top: 14px;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 6px 0 6px 8px;
+    border-color: transparent transparent transparent var(--black);
+    filter: drop-shadow(1px 0 1px rgba(0,0,0,0.1));
+}
+
+.assistant .message-bubble::after {
+    content: '';
+    position: absolute;
+    left: -6px;
+    top: 14px;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 6px 8px 6px 0;
+    border-color: transparent var(--white) transparent transparent;
+    filter: drop-shadow(-1px 0 1px rgba(0,0,0,0.05));
+}
+
+.assistant .message-bubble::before {
+    content: '';
+    position: absolute;
+    left: -7px;
+    top: 14px;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 6px 8px 6px 0;
+    border-color: transparent var(--gray-200) transparent transparent;
+}
+
+/* ===== ПАНЕЛЬ ВВОДА ===== */
+.chat-input-container {
+    padding: 20px 30px;
+    background: var(--white);
+    border-top: 1px solid var(--gray-200);
+    position: relative;
+    z-index: 10;
+    box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.chat-input {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    background: var(--white);
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius-lg);
+    padding: 12px 16px;
+    transition: all 0.2s;
+    box-shadow: var(--shadow-sm);
+}
+
+.chat-input:focus-within {
+    border-color: var(--gray-600);
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+}
+
+.chat-input textarea {
+    flex: 1;
+    border: none;
+    background: transparent;
+    resize: none;
+    font-family: inherit;
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--gray-900);
+    outline: none;
+    min-height: 24px;
+    max-height: 120px;
+    padding: 4px 0;
+}
+
+.chat-input textarea::placeholder {
+    color: var(--gray-500);
+}
+
+.send-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--black);
+    color: var(--white);
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.send-btn:hover {
+    background: var(--gray-800);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
+}
+
+.send-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.send-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* ===== БОКОВАЯ ПАНЕЛЬ (ЛИТЕРАТУРА) ===== */
+.chat-sidebar {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    padding: 24px;
+    height: fit-content;
+    position: sticky;
+    top: 30px;
+    border: 1px solid var(--gray-200);
+}
+
+.chat-sidebar h2 {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--black);
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.literature-list {
+    list-style: none;
+    margin-bottom: 24px;
+}
+
+.literature-list li {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--gray-100);
+    font-size: 14px;
+    color: var(--gray-900);
+    line-height: 1.4;
+    position: relative;
+    padding-left: 12px;
+}
+
+.literature-list li::before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: var(--gray-400);
+}
+
+.literature-list li:last-child {
+    border-bottom: none;
+}
+
+.secondary-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--gray-600);
+    text-decoration: none;
+    padding: 10px 16px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--gray-200);
+    background: var(--white);
+    transition: all 0.2s;
+    box-shadow: var(--shadow-sm);
+}
+
+.secondary-link:hover {
+    background: var(--gray-50);
+    border-color: var(--gray-300);
+    color: var(--gray-900);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+}
+
+/* ===== ПУСТОЙ СОСТОЯНИЕ ===== */
+.empty-state {
+    text-align: center;
+    padding: 80px 30px;
+    color: var(--gray-500);
+    background: var(--white);
+    border-radius: var(--radius-md);
+    margin: 20px;
+    box-shadow: var(--shadow-sm);
+    border: 1px dashed var(--gray-300);
+}
+
+.empty-state .empty-icon {
+    font-size: 32px;
+    margin-bottom: 16px;
+    color: var(--gray-400);
+}
+
+.empty-state p {
+    font-size: 15px;
+    line-height: 1.5;
+    max-width: 300px;
+    margin: 0 auto;
+}
+
+/* ===== SCROLLBAR ===== */
+.messages-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.messages-container::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 20px;
+}
+
+.messages-container::-webkit-scrollbar-thumb {
+    background: var(--gray-400);
+    border-radius: var(--radius-full);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+
+.messages-container::-webkit-scrollbar-thumb:hover {
+    background: var(--gray-500);
+}
+
+/* ===== АДАПТИВНОСТЬ ===== */
+@media (max-width: 1024px) {
+    .chat-layout {
+        grid-template-columns: 1fr;
+        height: auto;
+        min-height: calc(100vh - 80px);
+    }
+    
+    .chat-sidebar {
+        margin-top: 20px;
+        position: static;
+    }
+}
+
+@media (max-width: 768px) {
+    .chat-main {
+        border-radius: 0;
+        margin: 0 -20px;
+        box-shadow: none;
+    }
+    
+    .messages {
+        margin: 10px;
+        padding: 20px 15px;
+    }
+    
+    .message {
+        max-width: 90%;
+    }
+    
+    .chat-header,
+    .chat-input-container {
+        padding: 20px;
+    }
+    
+    .status-dot {
+        display: none;
+    }
+    
+    .online-status span {
+        display: none;
+    }
+}
+/* Для больших экранов делаем еще больше */
+@media (min-width: 1400px) {
+    .chat-layout {
+        grid-template-columns: 1fr 260px; /* Еще уменьшаем боковую панель */
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+    
+    .messages {
+        padding: 35px 40px; /* Еще больше отступов на больших экранах */
+        margin: 25px; /* Больше отступ от краев */
+    }
+    
+    .message {
+        max-width: 88%; /* Еще шире сообщения */
+    }
+}
+
+/* Для мобильных - адаптируем */
+@media (max-width: 1024px) {
+    .chat-layout {
+        grid-template-columns: 1fr;
+    }
+    
+    .messages {
+        padding: 25px 20px;
+        margin: 15px;
+    }
+}
+
+@media (max-width: 768px) {
+    .messages {
+        padding: 20px 15px;
+        margin: 10px;
+    }
+    
+    .message {
+        max-width: 92%;
+    }
+}

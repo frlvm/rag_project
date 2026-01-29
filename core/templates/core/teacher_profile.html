@@ -1,0 +1,40 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'core/css/teacher_profile.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="profile-wrapper">
+  <!-- Заголовок -->
+  <h1>Профиль преподавателя</h1>
+
+  <!-- Карточка с информацией о преподавателе -->
+  <div class="profile-card">
+    <p><strong>ФИО:</strong> {{ teacher.full_name }}</p>
+  </div>
+
+  <!-- Шапка раздела с предметами -->
+  <div class="profile-header">
+    <h2>Мои предметы</h2>
+    <a href="{% url 'add_subject' %}" class="primary-btn small">
+      + Добавить предмет
+    </a>
+  </div>
+
+  <!-- Список предметов -->
+  {% if subjects %}
+    <div class="subject-grid">
+      {% for subject in subjects %}
+        <a href="{% url 'subject_materials' subject.id %}" class="subject-card">
+          {{ subject.name }}
+          <small>{{ subject.course }} · {{ subject.institute }}</small>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="empty-text">Предметы ещё не добавлены</p>
+  {% endif %}
+</div>
+{% endblock %}

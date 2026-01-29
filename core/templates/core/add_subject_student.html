@@ -1,0 +1,27 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'core/css/add_subject_student.css' %}">
+{% endblock %}
+
+
+{% block content %}
+<div class="content-container">
+    <h2>Добавить предмет</h2>
+
+    {% for subject in subjects %}
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="subject_id" value="{{ subject.id }}">
+        <button type="submit">
+          <span class="subject-info">
+            <span class="subject-name">{{ subject.name }}</span>
+            <span class="subject-teacher">{{ subject.teacher.full_name }}</span>
+          </span>
+        </button>
+      </form>
+    {% empty %}
+      <p>Нет доступных предметов</p>
+    {% endfor %}
+  </div>
+{% endblock %}

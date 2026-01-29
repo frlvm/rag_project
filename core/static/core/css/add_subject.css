@@ -1,0 +1,262 @@
+/* Apple Minimalist Styles */
+:root {
+    --apple-white: #ffffff;
+    --apple-black: #000000;
+    --apple-gray-light: #f5f5f7;
+    --apple-gray: #8e8e93;
+    --apple-gray-dark: #1d1d1f;
+    --apple-blue: #007aff;
+}
+
+.page-wrapper {
+    min-height: calc(100vh - 200px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    background-color: var(--apple-white);
+}
+
+.form-card {
+    width: 100%;
+    max-width: 480px;
+    background: var(--apple-white);
+    border-radius: 18px;
+    padding: 40px;
+    box-shadow: 
+        0 4px 24px rgba(0, 0, 0, 0.03),
+        0 1px 2px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.form-card h1 {
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--apple-black);
+    text-align: center;
+    margin-bottom: 32px;
+    letter-spacing: -0.5px;
+}
+
+/* Form Styles */
+.subject-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Form Group */
+.subject-form p {
+    margin: 0 0 20px 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.subject-form label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--apple-gray-dark);
+    margin-bottom: 6px;
+    letter-spacing: -0.08px;
+}
+
+/* Input Fields */
+.subject-form input[type="text"],
+.subject-form textarea,
+.subject-form select {
+    width: 100%;
+    padding: 14px 16px;
+    font-size: 17px;
+    color: var(--apple-black);
+    background: var(--apple-white);
+    border: 1px solid rgba(0, 0, 0, 0.16);
+    border-radius: 12px;
+    transition: all 0.2s ease;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.subject-form textarea {
+    resize: vertical;
+    min-height: 100px;
+    line-height: 1.4;
+}
+
+.subject-form select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238e8e93' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    background-size: 12px;
+    padding-right: 40px;
+}
+
+/* Focus States */
+.subject-form input:focus,
+.subject-form textarea:focus,
+.subject-form select:focus {
+    outline: none;
+    border-color: var(--apple-blue);
+    box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.1);
+}
+
+/* Submit Button */
+.form-submit-btn {
+    margin-top: 8px;
+    padding: 16px 24px;
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--apple-white);
+    background: var(--apple-black);
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    letter-spacing: -0.24px;
+    text-align: center;
+}
+
+.form-submit-btn:hover {
+    background: var(--apple-gray-dark);
+    transform: translateY(-1px);
+}
+
+.form-submit-btn:active {
+    transform: translateY(0);
+}
+
+.form-submit-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Messages */
+.message {
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    font-size: 15px;
+    text-align: center;
+    animation: fadeIn 0.3s ease;
+}
+
+.message-success {
+    background: rgba(52, 199, 89, 0.1);
+    color: #34c759;
+    border: 1px solid rgba(52, 199, 89, 0.2);
+}
+
+.message-error {
+    background: rgba(255, 59, 48, 0.1);
+    color: #ff3b30;
+    border: 1px solid rgba(255, 59, 48, 0.2);
+}
+
+/* Error States */
+.subject-form input.error,
+.subject-form textarea.error,
+.subject-form select.error {
+    border-color: #ff3b30;
+}
+
+.error-message {
+    font-size: 13px;
+    color: #ff3b30;
+    margin-top: 6px;
+}
+
+/* Back Link */
+.back-link {
+    display: block;
+    text-align: center;
+    margin-top: 32px;
+    color: var(--apple-gray);
+    text-decoration: none;
+    font-size: 15px;
+    transition: color 0.2s ease;
+}
+
+.back-link:hover {
+    color: var(--apple-black);
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .form-card {
+        padding: 32px 24px;
+        border-radius: 16px;
+        border: none;
+        box-shadow: 
+            0 2px 12px rgba(0, 0, 0, 0.04),
+            0 0.5px 1px rgba(0, 0, 0, 0.08);
+    }
+    
+    .form-card h1 {
+        font-size: 24px;
+        margin-bottom: 28px;
+    }
+    
+    .subject-form input[type="text"],
+    .subject-form textarea,
+    .subject-form select {
+        padding: 12px 16px;
+        font-size: 16px;
+    }
+    
+    .form-submit-btn {
+        padding: 14px 20px;
+        font-size: 16px;
+    }
+}
+
+/* Utility Classes */
+.text-center {
+    text-align: center;
+}
+
+.mt-4 {
+    margin-top: 24px;
+}
+
+.mb-4 {
+    margin-bottom: 24px;
+}
+
+/* Form validation styles */
+.subject-form input:valid:not(:placeholder-shown),
+.subject-form textarea:valid:not(:placeholder-shown),
+.subject-form select:valid {
+    border-color: rgba(0, 0, 0, 0.16);
+}
+
+.subject-form input:invalid:not(:placeholder-shown),
+.subject-form textarea:invalid:not(:placeholder-shown),
+.subject-form select:invalid {
+    border-color: #ff3b30;
+}
+
+/* Placeholder styling */
+::placeholder {
+    color: var(--apple-gray);
+    opacity: 0.8;
+}
+
+:-ms-input-placeholder {
+    color: var(--apple-gray);
+}
+
+::-ms-input-placeholder {
+    color: var(--apple-gray);
+}
