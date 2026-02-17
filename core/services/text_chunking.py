@@ -1,6 +1,6 @@
 def split_into_chunks(
     text: str,
-    chunk_size: int = 400,
+    chunk_size: int = 500,
     overlap: int = 80
 ) -> list[str]:
     words = text.split()
