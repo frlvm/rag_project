@@ -109,9 +109,6 @@ class TextChunk(models.Model):
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
-    # на будущее
-    embedding = models.JSONField(null=True, blank=True)
-
 
 class StudentProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)

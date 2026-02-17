@@ -1,33 +1,54 @@
 {% extends 'core/base.html' %}
-{% load static %}
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'core/css/add_subject.css' %}">
-{% endblock %}
 
 {% block content %}
-<div class="page-wrapper">
-  <div class="form-card">
-    <h1>Новый предмет</h1>
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
 
-    {% if messages %}
-      {% for message in messages %}
-        <div class="message message-{{ message.tags }}">
-          {{ message }}
+      <div class="card shadow-sm">
+        <div class="card-body">
+
+          <h1 class="h4 mb-4 text-center">Новый предмет</h1>
+
+          {% if messages %}
+            {% for message in messages %}
+              <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+
+          <form method="post">
+            {% csrf_token %}
+
+            <!-- Название -->
+            <div class="mb-3">
+              <label class="form-label">{{ form.name.label }}</label>
+              {{ form.name }}
+            </div>
+
+            <!-- Курс -->
+            <div class="mb-3">
+              <label class="form-label">{{ form.course.label }}</label>
+              {{ form.course }}
+            </div>
+
+            <!-- Институт -->
+            <div class="mb-4">
+              <label class="form-label">{{ form.institute.label }}</label>
+              {{ form.institute }}
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">
+              Добавить предмет
+            </button>
+
+          </form>
+
         </div>
-      {% endfor %}
-    {% endif %}
+      </div>
 
-    <form method="post" class="subject-form">
-      {% csrf_token %}
-      
-      <!-- Вместо ручного рендеринга полей, используйте form.as_p или цикл -->
-      {{ form.as_p }}
-
-      
-      <button type="submit" class="form-submit-btn">
-        Добавить предмет
-      </button>
-    </form>
+    </div>
   </div>
 </div>
 {% endblock %}

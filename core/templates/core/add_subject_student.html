@@ -1,27 +1,29 @@
-{% extends 'core/base.html' %}
-{% load static %}
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'core/css/add_subject_student.css' %}">
-{% endblock %}
-
+{% extends "core/base.html" %}
 
 {% block content %}
-<div class="content-container">
-    <h2>Добавить предмет</h2>
+<div class="container mt-5" style="max-width: 720px;">
 
-    {% for subject in subjects %}
-      <form method="post">
-        {% csrf_token %}
-        <input type="hidden" name="subject_id" value="{{ subject.id }}">
-        <button type="submit">
-          <span class="subject-info">
-            <span class="subject-name">{{ subject.name }}</span>
-            <span class="subject-teacher">{{ subject.teacher.full_name }}</span>
-          </span>
-        </button>
-      </form>
-    {% empty %}
-      <p>Нет доступных предметов</p>
-    {% endfor %}
-  </div>
+  <h2 class="mb-4 text-center">Добавить предмет</h2>
+
+  {% if subjects %}
+    <div class="list-group">
+      {% for subject in subjects %}
+        <form method="post" class="list-group-item list-group-item-action p-0">
+          {% csrf_token %}
+          <input type="hidden" name="subject_id" value="{{ subject.id }}">
+          <button type="submit"
+                  class="btn btn-link w-100 text-start text-decoration-none p-3">
+            <div class="fw-semibold">{{ subject.name }}</div>
+            <div class="text-muted small">{{ subject.teacher.full_name }}</div>
+          </button>
+        </form>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="alert alert-secondary text-center">
+      Нет доступных предметов
+    </div>
+  {% endif %}
+
+</div>
 {% endblock %}

@@ -1,27 +1,28 @@
 {% extends "core/base.html" %}
 {% load static %}
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'core/css/login.css' %}">
-{% endblock %}
+
 
 {% block content %}
-<div class="login-wrapper">
-  <div class="login-card">
-    <h1>Вход в систему</h1>
-    <p>RAG-поиск по учебным материалам</p>
+<div class="container d-flex justify-content-center align-items-center" style="height: 100vh;">
+  <div class="card p-4 shadow-sm" style="max-width: 400px; width: 100%;">
+    <h1 class="text-center mb-4">Вход в систему</h1>
+    <p class="text-center mb-4">RAG-поиск по учебным материалам</p>
 
     <form method="post">
       {% csrf_token %}
-      
-      <!-- Поля формы с классами для стилизации -->
-      <div class="input-group">
-        <input type="text" name="username" class="input-field" placeholder="Ваш логин" required>
-      </div>
-      <div class="input-group">
-        <input type="password" name="password" class="input-field" placeholder="Ваш пароль" required>
+
+      <!-- Поля формы с классами для стилизации от Bootstrap -->
+      <div class="mb-3">
+        <label for="username" class="form-label">Ваш логин</label>
+        <input type="text" name="username" id="username" class="form-control" placeholder="Введите логин" required>
       </div>
 
-      <button type="submit" class="primary-btn">Войти</button>
+      <div class="mb-3">
+        <label for="password" class="form-label">Ваш пароль</label>
+        <input type="password" name="password" id="password" class="form-control" placeholder="Введите пароль" required>
+      </div>
+
+      <button type="submit" class="btn btn-primary w-100">Войти</button>
     </form>
   </div>
 </div>

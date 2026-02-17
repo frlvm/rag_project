@@ -1,50 +1,57 @@
-{% load static %}
+{% load bootstrap4 %}
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <title>{% block title %}RAG App{% endblock %}</title>
 
-    <!-- Общие стили -->
-    <link rel="stylesheet" href="{% static 'core/css/base.css' %}">
-
-    <!-- Стили конкретной страницы -->
-    {% block extra_css %}{% endblock %}
+    {% bootstrap_css %}
+    {% bootstrap_javascript %}
 </head>
-<body>
+<body class="d-flex flex-column min-vh-100">
 
-<header class="top-bar">
-  <div class="header-inner">
-    <div class="logo">RAG System</div>
+<header class="border-bottom bg-white">
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-center py-3">
 
-    <nav class="auth-nav">
-      {% if user.is_authenticated %}
-        <a class="user-link"
-           href="{% if user.role == 'teacher' %}
-                    {% url 'teacher_profile' %}
-                  {% else %}
-                    {% url 'student_profile' %}
-                  {% endif %}">
-          {{ user.username }}
-        </a>
+      <div class="fw-semibold fs-5">
+        RAG System
+      </div>
 
-        <form method="post" action="{% url 'logout' %}">
-          {% csrf_token %}
-          <button class="auth-button">Выйти</button>
-        </form>
-      {% else %}
-        <a href="{% url 'login' %}" class="auth-button">Войти</a>
-      {% endif %}
-    </nav>
+      <nav class="d-flex align-items-center gap-3">
+        {% if user.is_authenticated %}
+          <a class="text-decoration-none"
+             href="{% if user.role == 'teacher' %}
+                      {% url 'teacher_profile' %}
+                    {% else %}
+                      {% url 'student_profile' %}
+                    {% endif %}">
+            {{ user.username }}
+          </a>
+
+          <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-secondary btn-sm">
+              Выйти
+            </button>
+          </form>
+        {% else %}
+          <a href="{% url 'login' %}" class="btn btn-primary btn-sm">
+            Войти
+          </a>
+        {% endif %}
+      </nav>
+
+    </div>
   </div>
 </header>
 
-<main class="page-content">
+<main class="container flex-grow-1 py-4">
   {% block content %}{% endblock %}
 </main>
 
-<footer class="site-footer">
-  <p>Учебный проект • Фролова Мария</p>
+<footer class="border-top text-center text-muted py-3 mt-auto">
+  <small>Учебный проект • Фролова Мария</small>
 </footer>
 
 </body>

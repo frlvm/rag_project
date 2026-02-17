@@ -1,44 +1,39 @@
-{% extends 'core/base.html' %}
-{% load static %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'core/css/student_profile.css' %}">
-{% endblock %}
+{% extends "core/base.html" %}
 
 {% block content %}
-<div class="profile-wrapper">
-  <!-- Заголовок -->
-  <h1>Профиль студента</h1>
+<div class="container mt-5" style="max-width: 900px;">
 
-  <!-- Карточка с информацией о студенте -->
-  <div class="profile-card">
-    <p><strong>ФИО:</strong> {{ student.full_name }}</p>
-    <p><strong>Институт:</strong> {{ student.institute }}</p>
-    <p><strong>Курс:</strong> {{ student.course }}</p>
+  <h1 class="mb-4">Профиль студента</h1>
+
+  <div class="card mb-4 shadow-sm">
+    <div class="card-body">
+      <p><strong>ФИО:</strong> {{ student.full_name }}</p>
+      <p><strong>Институт:</strong> {{ student.institute }}</p>
+      <p><strong>Курс:</strong> {{ student.course }}</p>
+    </div>
   </div>
 
-  <!-- Кнопка добавления предмета -->
-  <div class="subjects">
-    <a href="{% url 'add_subject_for_student' %}" class="subject-btn">
-      ＋ Добавить предмет
-    </a>
-  </div>
+  <a href="{% url 'add_subject_for_student' %}"
+     class="btn btn-outline-dark mb-4">
+    ＋ Добавить предмет
+  </a>
 
-  <!-- Список предметов -->
-  <h2>Мои предметы</h2>
+  <h4 class="mb-3">Мои предметы</h4>
 
   {% if subjects %}
-    <div class="subject-grid">
+    <div class="row g-3">
       {% for subject in subjects %}
-        <a href="{% url 'student_chat' subject.id %}" class="subject-card">
-          {{ subject.name }}
-        </a>
+        <div class="col-md-4">
+          <a href="{% url 'student_chat' subject.id %}"
+             class="card card-body shadow-sm text-decoration-none text-dark">
+            {{ subject.name }}
+          </a>
+        </div>
       {% endfor %}
     </div>
   {% else %}
-    <p class="empty-text">
-      Предметы пока не добавлены. Начните с добавления первого предмета.
-    </p>
+    <p class="text-muted">Предметы пока не добавлены</p>
   {% endif %}
+
 </div>
 {% endblock %}

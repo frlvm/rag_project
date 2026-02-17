@@ -1,25 +1,17 @@
-import numpy as np
-from sklearn.metrics.pairwise import cosine_similarity
-from core.models import TextChunk
+from .vector_store import ChromaVectorStore
+from .embeddings import embed_text
 
 
-def retrieve_chunks(question_embedding, subject, top_k=5):
-    chunks = TextChunk.objects.filter(
-        document__subject=subject
+
+def retrieve_chunks(question, subject, top_k=5):
+    vector_store = ChromaVectorStore()
+
+    question_embedding = embed_text(question)
+
+    results = vector_store.query(
+        query_embedding=question_embedding,
+        subject_id=subject.id,
+        top_k=top_k
     )
 
-    embeddings = []
-    texts = []
-
-    for chunk in chunks:
-        embeddings.append(chunk.embedding)
-        texts.append(chunk.content)
-
-    similarities = cosine_similarity(
-        [question_embedding],
-        embeddings
-    )[0]
-
-    top_indices = np.argsort(similarities)[-top_k:][::-1]
-
-    return [texts[i] for i in top_indices]
+    return results["documents"][0]

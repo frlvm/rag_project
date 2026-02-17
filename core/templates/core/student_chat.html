@@ -1,152 +1,79 @@
 {% extends "core/base.html" %}
-{% load static %}
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'core/css/student_chat.css' %}">
-{% endblock %}
 
 {% block content %}
-<div class="chat-layout">
+<div class="container-fluid mt-4">
+  <div class="row g-4">
 
-  <!-- ОСНОВНАЯ ПАНЕЛЬ ЧАТА -->
-  <section class="chat-main">
-    <!-- ШАПКА ЧАТА -->
-    <div class="chat-header">
-      <h1>{{ subject.name }}</h1>
-      <p class="meta">
-        {{ subject.course }} курс · {{ subject.institute }} · {{ subject.teacher.full_name }}
-      </p>
-      <div class="online-status">
-        <div class="status-dot"></div>
-        <span>Онлайн</span>
-      </div>
-    </div>
+    <!-- ЧАТ -->
+    <div class="col-lg-8">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-white">
+          <h5 class="mb-1">{{ subject.name }}</h5>
+          <small class="text-muted">
+            {{ subject.course }} · {{ subject.institute }} · {{ subject.teacher.full_name }}
+          </small>
+        </div>
 
-    <!-- ОБЛАСТЬ СООБЩЕНИЙ -->
-    <div class="messages-container" id="messages-container">
-      <div class="messages" id="messages">
-        {% for msg in messages_history %}
-          <div class="message {% if msg.is_question %}student{% else %}assistant{% endif %}">
-            {% if not msg.is_question %}
-              <div class="message-avatar">AI</div>
-            {% endif %}
-            
-            <div class="message-content">
-              <div class="message-header">
-                <span class="message-username">
-                  {% if msg.is_question %}Вы{% else %}Ассистент{% endif %}
-                </span>
-                <span class="message-time">
-                  {{ msg.created_at|time:"H:i" }}
-                </span>
-              </div>
-              <div class="message-bubble">
+        <div class="card-body overflow-auto" style="max-height: 60vh;">
+          {% for msg in messages_history %}
+            <div class="d-flex mb-3 {% if msg.is_question %}justify-content-end{% endif %}">
+              <div class="p-3 rounded
+                          {% if msg.is_question %}
+                            bg-dark text-white
+                          {% else %}
+                            bg-light
+                          {% endif %}"
+                   style="max-width: 70%;">
                 {{ msg.message|linebreaks }}
+                <div class="text-end small mt-1 opacity-75">
+                  {{ msg.created_at|time:"H:i" }}
+                </div>
               </div>
             </div>
-            
-            {% if msg.is_question %}
-              <div class="message-avatar">Я</div>
-            {% endif %}
-          </div>
-        {% empty %}
-          <div class="empty-state">
-            <div class="empty-icon">📄</div>
-            <p>Начните диалог — задайте вопрос по материалам предмета</p>
-          </div>
-        {% endfor %}
+          {% empty %}
+            <p class="text-muted text-center">
+              Задайте вопрос по материалам предмета
+            </p>
+          {% endfor %}
+        </div>
+
+        <div class="card-footer bg-white">
+          <form method="post" class="d-flex gap-2">
+            {% csrf_token %}
+            <textarea name="question"
+                      class="form-control"
+                      rows="1"
+                      placeholder="Введите вопрос..."
+                      required></textarea>
+            <button class="btn btn-dark">Отправить</button>
+          </form>
+        </div>
       </div>
     </div>
 
-    <!-- ПАНЕЛЬ ВВОДА -->
-    <div class="chat-input-container">
-      <form method="post" class="chat-input" id="chat-form">
-        {% csrf_token %}
-        <textarea 
-          name="question"
-          id="question-input"
-          rows="1"
-          placeholder="Напишите сообщение..."
-          required
-          autocomplete="off"></textarea>
-        <button type="submit" class="send-btn" aria-label="Отправить сообщение">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M22 2L11 13M22 2L15 22L11 13M11 13L2 9L22 2Z" />
-          </svg>
-        </button>
-      </form>
+    <!-- ЛИТЕРАТУРА -->
+    <div class="col-lg-4">
+      <div class="card shadow-sm">
+        <div class="card-header bg-white">
+          Используемая литература
+        </div>
+        <ul class="list-group list-group-flush">
+          {% for doc in documents %}
+            <li class="list-group-item">{{ doc.title }}</li>
+          {% empty %}
+            <li class="list-group-item text-muted">
+              Материалы отсутствуют
+            </li>
+          {% endfor %}
+        </ul>
+        <div class="card-footer bg-white">
+          <a href="{% url 'student_profile' %}" class="btn btn-outline-secondary w-100">
+            ← К профилю
+          </a>
+        </div>
+      </div>
     </div>
 
-    {% if error %}
-      <div class="error-message">{{ error }}</div>
-    {% endif %}
-  </section>
-
-  <!-- БОКОВАЯ ПАНЕЛЬ С ЛИТЕРАТУРОЙ -->
-  <aside class="chat-sidebar">
-    <h2>Используемая литература</h2>
-
-    {% if documents %}
-      <ul class="literature-list">
-        {% for doc in documents %}
-          <li>{{ doc.title }}</li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <p class="muted">Материалы отсутствуют</p>
-    {% endif %}
-
-    <a href="{% url 'student_profile' %}" class="secondary-link">
-      ← Вернуться к профилю
-    </a>
-  </aside>
-
+  </div>
 </div>
-
-<!-- JavaScript для улучшения UX -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const messagesContainer = document.getElementById('messages-container');
-    const messages = document.getElementById('messages');
-    const form = document.getElementById('chat-form');
-    const textarea = document.getElementById('question-input');
-    
-    // Автоскролл вниз при загрузке
-    if (messagesContainer) {
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    }
-    
-    // Автовысота textarea
-    if (textarea) {
-        textarea.addEventListener('input', function() {
-            this.style.height = 'auto';
-            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-        });
-        
-        // Отправка формы по Ctrl+Enter
-        textarea.addEventListener('keydown', function(e) {
-            if (e.ctrlKey && e.key === 'Enter') {
-                e.preventDefault();
-                if (form) form.requestSubmit();
-            }
-        });
-        
-        // Фокус на поле ввода
-        textarea.focus();
-    }
-    
-    // Скролл к новым сообщениям
-    if (messages && messagesContainer) {
-        const observer = new MutationObserver(function() {
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        });
-        
-        observer.observe(messages, { childList: true, subtree: true });
-    }
-    
-    // Плавный скролл
-    if (messagesContainer) {
-        messagesContainer.style.scrollBehavior = 'smooth';
-    }
-});
-</script>
 {% endblock %}

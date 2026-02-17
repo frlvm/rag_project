@@ -1,128 +1,54 @@
 {% extends "core/base.html" %}
-{% load static %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'core/css/subject_materials.css' %}">
-{% endblock %}
-
-{% block title %}Материалы — {{ subject.name }}{% endblock %}
 
 {% block content %}
-<div class="page-container">
+<div class="container mt-5" style="max-width: 900px;">
 
-  <!-- Шапка страницы -->
-  <section class="page-header">
-    <h1>{{ subject.name }}</h1>
-    <p class="meta">
-      {{ subject.course }} курс · {{ subject.institute }}
-    </p>
-  </section>
+  <h1 class="mb-2">{{ subject.name }}</h1>
+  <p class="text-muted mb-4">
+    {{ subject.course }} курс · {{ subject.institute }}
+  </p>
 
-  <!-- Форма загрузки документа -->
-  <section class="card">
-    <h2>Добавить материал</h2>
-    <form method="post" enctype="multipart/form-data" class="upload-form" id="uploadForm">
-      {% csrf_token %}
-      
-      <!-- Кнопка для выбора файла -->
-      <div class="file-input-wrapper">
-        <button type="button" class="file-select-btn" id="fileSelectBtn">
-          <span>Выберите файл</span>
-        </button>
-        <input type="file" name="file" id="fileInput" required 
-               accept=".pdf,.doc,.docx,.txt,.ppt,.pptx,.xls,.xlsx"
-               onchange="updateFileName()">
-      </div>
-      
-      <!-- Показать выбранный файл -->
-      <div class="selected-file" id="selectedFile">
-        <span class="no-file">Файл не выбран</span>
-      </div>
-      
-      <!-- Кнопка отправки формы -->
-      <button type="submit" class="submit-btn" id="submitBtn" disabled>
-        Загрузить файл
-      </button>
-    </form>
-  </section>
+  <!-- Загрузка -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <h5 class="mb-3">Добавить материал</h5>
+      <form method="post" enctype="multipart/form-data" class="d-flex gap-2">
+        {% csrf_token %}
+        <input type="file" name="file" class="form-control" required>
+        <button class="btn btn-dark">Загрузить</button>
+      </form>
+    </div>
+  </div>
 
-<!-- Список документов -->
-<section class="card">
-    <h2>Мои материалы</h2>
+  <!-- Документы -->
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h5 class="mb-3">Мои материалы</h5>
 
-    {% if documents %}
-        <ul class="doc-list">
-            {% for doc in documents %}
-                <li class="doc-row">
-                    <span class="doc-title">{{ doc.title }}</span>
-                    <div class="doc-actions">
-                        {% if doc.file %}
-                            <a href="{{ doc.file.url }}" target="_blank" class="action-btn view-btn">
-                                Открыть
-                            </a>
-                        {% endif %}
-                        <a href="{% url 'delete_document' doc.id %}" class="action-btn danger-link" onclick="return confirm('Вы уверены, что хотите удалить этот документ?')">
-                            Удалить
-                        </a>
-                    </div>
-                </li>
-            {% endfor %}
+      {% if documents %}
+        <ul class="list-group">
+          {% for doc in documents %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              {{ doc.title }}
+              <div class="btn-group btn-group-sm">
+                {% if doc.file %}
+                  <a href="{{ doc.file.url }}" target="_blank"
+                     class="btn btn-outline-secondary">Открыть</a>
+                {% endif %}
+                <a href="{% url 'delete_document' doc.id %}"
+                   class="btn btn-outline-danger"
+                   onclick="return confirm('Удалить документ?')">
+                  Удалить
+                </a>
+              </div>
+            </li>
+          {% endfor %}
         </ul>
-    {% else %}
-        <p class="muted">Документы пока не загружены</p>
-    {% endif %}
-</section>
+      {% else %}
+        <p class="text-muted">Документы не загружены</p>
+      {% endif %}
+    </div>
+  </div>
 
 </div>
-
-<!-- Минимальный JavaScript -->
-<script>
-// Функция обновления имени файла
-function updateFileName() {
-    const fileInput = document.getElementById('fileInput');
-    const selectedFile = document.getElementById('selectedFile');
-    const submitBtn = document.getElementById('submitBtn');
-    const fileSelectBtn = document.getElementById('fileSelectBtn');
-    
-    if (fileInput.files.length > 0) {
-        const file = fileInput.files[0];
-        const fileSize = (file.size / (1024 * 1024)).toFixed(2); // МБ
-        
-        selectedFile.innerHTML = `<span>${file.name} (${fileSize} МБ)</span>`;
-        submitBtn.disabled = false;
-        
-        // Обновляем текст кнопки
-        fileSelectBtn.innerHTML = '<span class="icon">📁</span><span>Изменить файл</span>';
-    } else {
-        selectedFile.innerHTML = '<span class="no-file">Файл не выбран</span>';
-        submitBtn.disabled = true;
-    }
-}
-
-// Инициализация при загрузке
-document.addEventListener('DOMContentLoaded', function() {
-    const fileSelectBtn = document.getElementById('fileSelectBtn');
-    const fileInput = document.getElementById('fileInput');
-    
-    // Открытие диалога выбора файла при клике на кнопку
-    if (fileSelectBtn && fileInput) {
-        fileSelectBtn.addEventListener('click', function() {
-            fileInput.click();
-        });
-    }
-    
-    // Блокировка формы при отправке
-    const form = document.getElementById('uploadForm');
-    if (form) {
-        form.addEventListener('submit', function() {
-            const submitBtn = document.getElementById('submitBtn');
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.classList.add('loading');
-                submitBtn.innerHTML = 'Загрузка...';
-            }
-        });
-    }
-});
-</script>
 {% endblock %}
