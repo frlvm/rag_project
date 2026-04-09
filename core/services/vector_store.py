@@ -76,6 +76,16 @@ class ChromaVectorStore:
             where={"document_id": str(document_id)}
         )
 
+    def delete_by_subject_and_title(self, subject_id, document_title):
+        self.collection.delete(
+            where={
+                "$and": [
+                    {"subject_id": str(subject_id)},
+                    {"document_title": document_title}
+                ]
+            }
+        )
+
     # -----------------------------
     # Полная очистка
     # -----------------------------

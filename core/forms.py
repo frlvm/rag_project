@@ -2,7 +2,16 @@ from django import forms
 
 from .models import StudentProfile, Subject, User
 
+from django import forms
+from .models import Document, User, StudentProfile, Subject
 
+
+class DocumentForm(forms.ModelForm):
+    class Meta:
+        model = Document
+        fields = ['title', 'file']
+
+        
 class StudentRegistrationForm(forms.ModelForm):
     username = forms.CharField(label="Логин")
     password = forms.CharField(widget=forms.PasswordInput, label="Пароль")

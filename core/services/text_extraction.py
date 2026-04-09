@@ -1,7 +1,10 @@
 import os
-
-import fitz
+import fitz  # PyMuPDF
 from docx import Document as DocxDocument
+from docx2pdf import convert
+from PyPDF2 import PdfReader
+import tempfile
+import os
 
 
 def extract_text(file_path: str) -> list[dict]:
@@ -9,24 +12,21 @@ def extract_text(file_path: str) -> list[dict]:
 
     if ext == ".pdf":
         return extract_text_from_pdf(file_path)
-    if ext == ".docx":
+    elif ext == ".docx":
         return extract_text_from_docx(file_path)
-
-    raise ValueError("Неподдерживаемый формат файла")
+    else:
+        raise ValueError("Неподдерживаемый формат файла")
 
 
 def extract_text_from_pdf(file_path: str) -> list[dict]:
-    units = []
-
+    units=[]
     with fitz.open(file_path) as pdf:
         for i, page in enumerate(pdf, start=1):
-            units.append(
-                {
-                    "page_start": i,
-                    "page_end": i,
-                    "text": page.get_text(),
-                }
-            )
+            units.append({
+                "page_start": i,
+                "page_end": i,
+                "text": page.get_text()
+            })
 
     return units
 
@@ -34,10 +34,8 @@ def extract_text_from_pdf(file_path: str) -> list[dict]:
 def extract_text_from_docx(file_path: str) -> list[dict]:
     doc = DocxDocument(file_path)
     text = "\n".join(p.text for p in doc.paragraphs)
-    return [
-        {
-            "page_start": None,
-            "page_end": None,
-            "text": text,
-        }
-    ]
+    return [{
+        "page_start": None,
+        "page_end": None,
+        "text": text
+        }]
