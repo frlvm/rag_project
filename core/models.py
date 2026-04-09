@@ -1,7 +1,5 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.conf import settings
-from django.db.models import JSONField
 
 
 class User(AbstractUser):
@@ -12,7 +10,6 @@ class User(AbstractUser):
     role = models.CharField(max_length=10, choices=ROLE_CHOICES)
 
 
-# Добавьте эти модели к существующим
 class Institute(models.Model):
     """Модель для хранения институтов"""
     name = models.CharField(
@@ -44,24 +41,17 @@ class Institute(models.Model):
 
 
 class Course(models.Model):
-    """Модель для хранения курсов"""
-    number = models.IntegerField(
-        verbose_name="Номер курса",
-        unique=True
-    )
-    description = models.CharField(
-        max_length=100,
-        verbose_name="Описание",
-        blank=True
-    )
-    
-    class Meta:
-        verbose_name = "Курс"
-        verbose_name_plural = "Курсы"
-        ordering = ['number']
-    
+    LEVEL_CHOICES = [
+        ("bachelor", "Бакалавриат"),
+        ("master", "Магистратура"),
+    ]
+
+    level = models.CharField(max_length=20, choices=LEVEL_CHOICES, default="bachelor")
+    number = models.IntegerField()  # курс: 1,2,3,4 для бакалавра; 1,2 для магистра
+    description = models.TextField(blank=True)
+
     def __str__(self):
-        return f"{self.number} курс"
+        return f"{self.get_level_display()} {self.number} курс"
 
 
 class Subject(models.Model):
@@ -101,14 +91,22 @@ class Document(models.Model):
 
 
 class TextChunk(models.Model):
-    document = models.ForeignKey(
-        Document,
-        related_name="chunks",
-        on_delete=models.CASCADE
-    )
+    document = models.ForeignKey(Document, on_delete=models.CASCADE, related_name='chunks')
     content = models.TextField()
+
+    # новые поля
+    page_start = models.IntegerField(null=True, blank=True)
+    page_end = models.IntegerField(null=True, blank=True)
+    chunk_index = models.IntegerField(default=0)
+
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        if self.page_start and self.page_end:
+            if self.page_start == self.page_end:
+                return f"{self.document.title} | стр. {self.page_start} | chunk {self.chunk_index}"
+            return f"{self.document.title} | стр. {self.page_start}-{self.page_end} | chunk {self.chunk_index}"
+        return f"{self.document.title} | chunk {self.chunk_index}"
 
 class StudentProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -146,22 +144,14 @@ class TeacherProfile(models.Model):
 
 
 class ChatMessage(models.Model):
-    student = models.ForeignKey(
-        StudentProfile,
-        on_delete=models.CASCADE,
-        related_name='messages'
-    )
-    subject = models.ForeignKey(
-        Subject,
-        on_delete=models.CASCADE,
-        related_name='messages'
-    )
+    student = models.ForeignKey(StudentProfile, on_delete=models.CASCADE, related_name='messages')
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='messages')
     message = models.TextField()
-    is_question = models.BooleanField()  # True — вопрос, False — ответ
+    is_question = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    # новое поле: список источников
+    sources = models.JSONField(null=True, blank=True)
+
     def __str__(self):
-        role = "Q" if self.is_question else "A"
-        return f"{role}: {self.message[:50]}"
-
-
+        return f"{'Q' if self.is_question else 'A'} | {self.student} | {self.subject}"

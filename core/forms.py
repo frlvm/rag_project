@@ -1,11 +1,6 @@
 from django import forms
-from .models import Document, User, StudentProfile, Subject
 
-
-class DocumentForm(forms.ModelForm):
-    class Meta:
-        model = Document
-        fields = ['title', 'file']
+from .models import StudentProfile, Subject, User
 
 
 class StudentRegistrationForm(forms.ModelForm):

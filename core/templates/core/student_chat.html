@@ -14,7 +14,8 @@
           </small>
         </div>
 
-        <div class="card-body overflow-auto" style="max-height: 60vh;">
+        <!-- ИЗМЕНЕНО: добавил id="chatMessages" -->
+        <div class="card-body overflow-auto" id="chatMessages" style="max-height: 60vh;">
           {% for msg in messages_history %}
             <div class="d-flex mb-3 {% if msg.is_question %}justify-content-end{% endif %}">
               <div class="p-3 rounded
@@ -31,49 +32,155 @@
               </div>
             </div>
           {% empty %}
-            <p class="text-muted text-center">
+            <!-- ИЗМЕНЕНО: добавил класс no-messages -->
+            <p class="text-muted text-center no-messages">
               Задайте вопрос по материалам предмета
             </p>
           {% endfor %}
         </div>
 
         <div class="card-footer bg-white">
-          <form method="post" class="d-flex gap-2">
+          <!-- ИЗМЕНЕНО: убрал method="post", добавил id="chatForm" -->
+          <form id="chatForm" class="d-flex gap-2">
             {% csrf_token %}
+            <!-- ИЗМЕНЕНО: добавил id="questionInput" -->
             <textarea name="question"
+                      id="questionInput"
                       class="form-control"
                       rows="1"
                       placeholder="Введите вопрос..."
                       required></textarea>
-            <button class="btn btn-dark">Отправить</button>
+            <!-- ИЗМЕНЕНО: добавил id="sendBtn" и type="submit" -->
+            <button type="submit" id="sendBtn" class="btn btn-dark">Отправить</button>
           </form>
+          <!-- ИЗМЕНЕНО: добавил контейнер для ошибок -->
+          <div id="errorMessage" class="alert alert-danger mt-2" style="display:none;"></div>
         </div>
       </div>
     </div>
 
-    <!-- ЛИТЕРАТУРА -->
-    <div class="col-lg-4">
-      <div class="card shadow-sm">
-        <div class="card-header bg-white">
-          Используемая литература
-        </div>
-        <ul class="list-group list-group-flush">
-          {% for doc in documents %}
-            <li class="list-group-item">{{ doc.title }}</li>
-          {% empty %}
-            <li class="list-group-item text-muted">
-              Материалы отсутствуют
-            </li>
-          {% endfor %}
-        </ul>
-        <div class="card-footer bg-white">
-          <a href="{% url 'student_profile' %}" class="btn btn-outline-secondary w-100">
-            ← К профилю
-          </a>
-        </div>
-      </div>
+   
     </div>
 
   </div>
 </div>
+
+<!-- ДОБАВЛЕНО: JavaScript для AJAX -->
+<script>
+const chatForm = document.getElementById('chatForm');
+const chatMessages = document.getElementById('chatMessages');
+const questionInput = document.getElementById('questionInput');
+const sendBtn = document.getElementById('sendBtn');
+const errorMessage = document.getElementById('errorMessage');
+
+// Автопрокрутка вниз
+function scrollToBottom() {
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+// Создание HTML сообщения (Bootstrap стили)
+function createMessageHTML(message, isQuestion, time) {
+    const alignment = isQuestion ? 'justify-content-end' : '';
+    const bgColor = isQuestion ? 'bg-dark text-white' : 'bg-light';
+    
+    return `
+        <div class="d-flex mb-3 ${alignment}">
+            <div class="p-3 rounded ${bgColor}" style="max-width: 70%;">
+                ${message.replace(/\n/g, '<br>')}
+                <div class="text-end small mt-1 opacity-75">
+                    ${time}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Показать ошибку
+function showError(text) {
+    errorMessage.textContent = text;
+    errorMessage.style.display = 'block';
+    setTimeout(() => {
+        errorMessage.style.display = 'none';
+    }, 5000);
+}
+
+// Обработка отправки формы
+chatForm.addEventListener('submit', async function(e) {
+    e.preventDefault(); // Останавливаем обычную отправку
+    
+    const question = questionInput.value.trim();
+    
+    if (!question) {
+        showError('Введите вопрос');
+        return;
+    }
+
+    // Блокируем форму
+    sendBtn.disabled = true;
+    questionInput.disabled = true;
+    sendBtn.textContent = 'Отправка...';
+
+    try {
+        // AJAX запрос
+        const response = await fetch("{% url 'send_message' subject.id %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({ question: question })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            // Удаляем заглушку
+            const noMessages = chatMessages.querySelector('.no-messages');
+            if (noMessages) {
+                noMessages.remove();
+            }
+
+            // Добавляем вопрос
+            chatMessages.insertAdjacentHTML('beforeend', 
+                createMessageHTML(data.question.message, true, data.question.time)
+            );
+
+            // Добавляем ответ
+            chatMessages.insertAdjacentHTML('beforeend', 
+                createMessageHTML(data.answer.message, false, data.answer.time)
+            );
+
+            // Очищаем поле
+            questionInput.value = '';
+
+            // Прокручиваем вниз
+            scrollToBottom();
+
+        } else {
+            showError(data.error || 'Произошла ошибка');
+        }
+
+    } catch (error) {
+        console.error('Error:', error);
+        showError('Ошибка соединения с сервером');
+    } finally {
+        // Разблокируем форму
+        sendBtn.disabled = false;
+        questionInput.disabled = false;
+        sendBtn.textContent = 'Отправить';
+        questionInput.focus();
+    }
+});
+
+// Enter для отправки (Shift+Enter для новой строки)
+questionInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        chatForm.dispatchEvent(new Event('submit'));
+    }
+});
+
+// Прокрутка при загрузке
+window.addEventListener('load', scrollToBottom);
+</script>
 {% endblock %}

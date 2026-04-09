@@ -1,21 +1,19 @@
 import os
 import chromadb
-from chromadb.config import Settings
 from django.conf import settings
 from threading import Lock
-
+import shutil
 
 class ChromaVectorStore:
     """
     Единый persistent-клиент ChromaDB.
-    Используется Singleton-подход, чтобы клиент создавался один раз.
+    Singleton-подход — клиент создаётся один раз.
     """
 
     _instance = None
     _lock = Lock()
 
     def __new__(cls):
-        # Гарантируем один экземпляр на всё приложение
         if cls._instance is None:
             with cls._lock:
                 if cls._instance is None:
@@ -24,18 +22,13 @@ class ChromaVectorStore:
         return cls._instance
 
     def _initialize(self):
-        # Путь хранения
+        # Папка хранения
         self.chroma_path = os.path.join(settings.BASE_DIR, "chroma_storage")
-
-        # Создаём папку, если её нет
         os.makedirs(self.chroma_path, exist_ok=True)
 
         # Persistent клиент
-        self.client = chromadb.Client(
-            Settings(
-                persist_directory=self.chroma_path,
-                anonymized_telemetry=False
-            )
+        self.client = chromadb.PersistentClient(
+            path=self.chroma_path
         )
 
         # Коллекция
@@ -43,7 +36,8 @@ class ChromaVectorStore:
             name="subjects_collection"
         )
 
-        print(f"[Chroma] Initialized at {self.chroma_path}")
+        print(f"[Chroma] Persistent initialized at {self.chroma_path}")
+        print(f"[Chroma] Collection count: {self.collection.count()}")
 
     # -----------------------------
     # Добавление документов
@@ -59,30 +53,57 @@ class ChromaVectorStore:
             metadatas=metadatas
         )
 
+        print(f"[Chroma] Added {len(ids)} documents")
+        print(f"[Chroma] Collection count now: {self.collection.count()}")
+
     # -----------------------------
     # Поиск
     # -----------------------------
     def query(self, query_embedding, subject_id, top_k=5):
-        results = self.collection.query(
+        return self.collection.query(
             query_embeddings=[query_embedding],
             n_results=top_k,
-            where={"subject_id": subject_id}
+            where={"subject_id": str(subject_id)},
+            include=["documents", "metadatas", "distances"]
         )
-        return results
+
 
     # -----------------------------
     # Удаление по предмету
     # -----------------------------
-    def delete_by_subject(self, subject_id):
+    def delete_by_document(self, document_id):
         self.collection.delete(
-            where={"subject_id": subject_id}
+            where={"document_id": str(document_id)}
         )
 
     # -----------------------------
-    # Полная очистка (для тестов)
+    # Полная очистка
     # -----------------------------
     def reset_collection(self):
-        self.client.delete_collection("subjects_collection")
+    # 1. Закрыть/забыть текущую коллекцию
+        self.collection = None
+
+    # 2. Удалить директорию Chroma
+        persist_dir = "./chroma_db"  # ← укажи свой путь
+
+        if os.path.exists(persist_dir):
+            shutil.rmtree(persist_dir)
+            print("[Chroma] Directory removed")
+
+    # 3. Создать новый клиент
+        import chromadb
+        from chromadb.config import Settings
+
+        self.client = chromadb.Client(
+            Settings(persist_directory=persist_dir)
+        )
+
+    # 4. Создать коллекцию заново
         self.collection = self.client.get_or_create_collection(
             name="subjects_collection"
         )
+
+        print("[Chroma] Collection FULL reset")
+        data = self.collection.get()
+
+        print("[DEBUG] Chroma size:", len(data["ids"]))

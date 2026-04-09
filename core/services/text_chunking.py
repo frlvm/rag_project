@@ -1,18 +1,14 @@
-def split_into_chunks(
-    text: str,
-    chunk_size: int = 500,
-    overlap: int = 80
-) -> list[str]:
-    words = text.split()
-    chunks = []
+from chonkie import TokenChunker
 
-    start = 0
-    while start < len(words):
-        end = start + chunk_size
-        chunk_words = words[start:end]
-        chunk = " ".join(chunk_words)
-        chunks.append(chunk)
+# создаём один раз — лучше на уровне модуля
+token_chunker = TokenChunker(
+    tokenizer="word",
+    chunk_size=500,
+    chunk_overlap=100
+)
 
-        start = end - overlap
+def split_into_chunks(text: str) -> list[str]:
+    chunks = token_chunker.chunk(text)
 
-    return chunks
+    # возвращаем текст чанков
+    return [chunk.text for chunk in chunks]
