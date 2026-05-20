@@ -19,6 +19,5 @@ urlpatterns = [
     path('teacher/subject/add/', views.add_subject, name='add_subject'),
     path('teacher/subject/<int:subject_id>/', views.subject_materials, name='subject_materials'),
     path('teacher/document/<int:doc_id>/delete/', views.delete_document, name='delete_document'), 
-    path('student/subject/add', views.add_subject_for_student, name='add_subject_for_student'), 
     path('chat/<int:subject_id>/send/', views.send_message, name='send_message'),
 ]

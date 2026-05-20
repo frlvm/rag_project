@@ -8,7 +8,10 @@ token_chunker = TokenChunker(
 )
 
 def split_into_chunks(text: str) -> list[str]:
+    if not text or not text.strip():
+        return []
+
     chunks = token_chunker.chunk(text)
 
     # возвращаем текст чанков
-    return [chunk.text for chunk in chunks]
+    return [chunk.text for chunk in chunks if chunk.text.strip()]

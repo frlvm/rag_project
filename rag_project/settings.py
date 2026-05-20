@@ -137,3 +137,32 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+LOG_DIR = BASE_DIR / "logs"
+LOG_DIR.mkdir(exist_ok=True)
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'structured': {
+            'format': '%(asctime)s | %(levelname)s | %(name)s | %(message)s',
+        },
+    },
+    'handlers': {
+        'rag_file': {
+            'class': 'logging.FileHandler',
+            'filename': LOG_DIR / 'rag.log',
+            'formatter': 'structured',
+            'level': 'INFO',
+            'encoding': 'utf-8',
+        },
+    },
+    'loggers': {
+        'core.rag': {
+            'handlers': ['rag_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}

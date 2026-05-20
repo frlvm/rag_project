@@ -43,6 +43,7 @@ jsonschema==4.26.0
 jsonschema-specifications==2025.9.1
 kubernetes==35.0.0
 lxml==6.0.2
+locust==2.43.4
 markdown-it-py==4.0.0
 MarkupSafe==3.0.3
 mdurl==0.1.2

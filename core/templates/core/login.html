@@ -9,9 +9,11 @@
     <p class="text-center mb-4">RAG-поиск по учебным материалам</p>
 {% if messages %}
   {% for message in messages %}
-    <div class="alert alert-danger border border-danger rounded-3 shadow-sm">
-      <strong>Ошибка:</strong> {{ message }}
-    </div>
+    {% if message.level_tag == "error" %}
+      <div class="alert alert-danger border border-danger rounded-3 shadow-sm">
+        <strong>Ошибка:</strong> {{ message }}
+      </div>
+    {% endif %}
   {% endfor %}
 {% endif %}
 

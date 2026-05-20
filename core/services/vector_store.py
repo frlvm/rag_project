@@ -1,8 +1,13 @@
 import os
 import chromadb
+import logging
 from django.conf import settings
 from threading import Lock
 import shutil
+from .logging_utils import log_event
+
+
+logger = logging.getLogger("core.rag")
 
 class ChromaVectorStore:
     """
@@ -36,8 +41,14 @@ class ChromaVectorStore:
             name="subjects_collection"
         )
 
-        print(f"[Chroma] Persistent initialized at {self.chroma_path}")
-        print(f"[Chroma] Collection count: {self.collection.count()}")
+        log_event(
+            logger,
+            logging.INFO,
+            "chroma_initialized",
+            chroma_path=self.chroma_path,
+            collection_name="subjects_collection",
+            collection_count=self.collection.count(),
+        )
 
     # -----------------------------
     # Добавление документов
@@ -53,8 +64,13 @@ class ChromaVectorStore:
             metadatas=metadatas
         )
 
-        print(f"[Chroma] Added {len(ids)} documents")
-        print(f"[Chroma] Collection count now: {self.collection.count()}")
+        log_event(
+            logger,
+            logging.INFO,
+            "chroma_documents_added",
+            added_count=len(ids),
+            collection_count=self.collection.count(),
+        )
 
     # -----------------------------
     # Поиск
@@ -98,7 +114,12 @@ class ChromaVectorStore:
 
         if os.path.exists(persist_dir):
             shutil.rmtree(persist_dir)
-            print("[Chroma] Directory removed")
+            log_event(
+                logger,
+                logging.WARNING,
+                "chroma_directory_removed",
+                persist_dir=persist_dir,
+            )
 
     # 3. Создать новый клиент
         import chromadb
@@ -113,7 +134,11 @@ class ChromaVectorStore:
             name="subjects_collection"
         )
 
-        print("[Chroma] Collection FULL reset")
         data = self.collection.get()
-
-        print("[DEBUG] Chroma size:", len(data["ids"]))
+        log_event(
+            logger,
+            logging.WARNING,
+            "chroma_collection_reset",
+            collection_name="subjects_collection",
+            collection_count=len(data["ids"]),
+        )

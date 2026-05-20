@@ -8,18 +8,64 @@ from core.services.rag_pipeline import answer_question
 from core.services.text_extraction import extract_text
 from core.services.text_cleaning import clean_text
 from core.services.text_chunking import split_into_chunks
-from core.services.document_processor import process_document
+from core.services.document_processor import DocumentTextExtractionError, process_document
 from django.http import HttpResponseForbidden, HttpResponse
 from django.urls import reverse
 from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 import json
-from core.services.retriever import retrieve_chunks, normalize_sources
+import logging
+from time import perf_counter
 from django import forms
 import csv
 from core.services.vector_store import ChromaVectorStore  # проверь путь
 from django.contrib.auth import authenticate, login
+from core.services.logging_utils import log_event, print_document_delete_event
+from core.services.gigachat_client import ask_gigachat
+from django.utils import timezone
+from pathlib import Path
+
+
+logger = logging.getLogger("core.rag")
+SUPPORTED_DOCUMENT_EXTENSIONS = {".pdf", ".docx", ".txt"}
+
+
+def _message_time(value):
+    return timezone.localtime(value).strftime("%H:%M")
+
+
+def _document_display_name(document):
+    return Path(document.title).stem
+
+
+def _format_source(source):
+    title = source.get("document_title")
+    if not title:
+        return ""
+
+    page_start = source.get("page_start")
+    page_end = source.get("page_end")
+
+    if page_start and page_end and page_start != page_end:
+        return f"{title}, стр. {page_start}-{page_end}"
+    if page_start:
+        return f"{title}, стр. {page_start}"
+    return title
+
+
+def _append_sources_to_answer(answer_text, sources):
+    formatted_sources = [
+        formatted
+        for formatted in (_format_source(source) for source in sources or [])
+        if formatted
+    ]
+
+    if not formatted_sources:
+        return answer_text
+
+    sources_text = "\n".join(f"- {source}" for source in formatted_sources)
+    return f"{answer_text.rstrip()}\n\nИсточники:\n{sources_text}"
 
 
 class CustomLoginView(LoginView):
@@ -53,27 +99,60 @@ class CustomLoginView(LoginView):
 
 @login_required
 def delete_document(request, doc_id):
+    started_at = perf_counter()
     document = get_object_or_404(Document, id=doc_id)
 
     if document.subject.teacher.user != request.user:
         return HttpResponseForbidden("Нет доступа")
 
     subject_id = document.subject.id
+    document_data = {
+        "document_id": document.id,
+        "document_title": document.title,
+        "file_path": document.file.path if document.file else "не указан",
+        "file_size": document.file.size if document.file else 0,
+        "subject_id": document.subject.id,
+        "subject_name": document.subject.name,
+        "teacher_name": document.subject.teacher.full_name,
+    }
 
     vector_store = ChromaVectorStore()
+    chroma_chunks = vector_store.collection.get(
+        where={"document_id": str(document.id)}
+    )
+    chroma_found_ids = [str(chunk_id) for chunk_id in chroma_chunks.get("ids", [])]
 
     # 🔥 1. Удаляем из Chroma ТОЛЬКО этот документ
     vector_store.collection.delete(
         where={"document_id": str(document.id)}
     )
+    chroma_remaining_chunks = vector_store.collection.get(
+        where={"document_id": str(document.id)}
+    )
+    chroma_remaining_ids = [
+        str(chunk_id)
+        for chunk_id in chroma_remaining_chunks.get("ids", [])
+    ]
 
     # 🔥 2. Удаляем чанки из БД
     chunks = TextChunk.objects.filter(document=document)
+    postgresql_found_ids = [str(chunk_id) for chunk_id in chunks.values_list("id", flat=True)]
     deleted_count, _ = chunks.delete()
 
     # 🔥 3. Удаляем файл и документ
     document.file.delete(save=False)
     document.delete()
+
+    duration_ms = round((perf_counter() - started_at) * 1000, 2)
+    print_document_delete_event(
+        document_data=document_data,
+        postgresql_found_ids=postgresql_found_ids,
+        postgresql_deleted_ids=postgresql_found_ids if deleted_count else [],
+        chroma_found_ids=chroma_found_ids,
+        chroma_deleted_ids=chroma_found_ids,
+        chroma_remaining_ids=chroma_remaining_ids,
+        duration_ms=duration_ms,
+    )
 
     messages.success(
         request,
@@ -97,28 +176,43 @@ def subject_materials(request, subject_id):
         teacher=teacher
     )
 
+    upload_error = None
+
     # загрузка документа
     if request.method == "POST":
         file = request.FILES.get("file")
 
         if file:
-            document = Document.objects.create(
-                title=file.name,
-                file=file,
-                subject=subject
-            )
+            file_extension = Path(file.name).suffix.lower()
+            if file_extension not in SUPPORTED_DOCUMENT_EXTENSIONS:
+                upload_error = "Неподдерживаемый формат файла. Можно загрузить PDF, Word (.docx) или TXT."
+            else:
+                document = Document.objects.create(
+                    title=file.name,
+                    file=file,
+                    subject=subject
+                )
 
-            # RAG-подготовка
-            process_document(document)
+                try:
+                    # RAG-подготовка
+                    process_document(document)
+                except DocumentTextExtractionError as exc:
+                    document.file.delete(save=False)
+                    document.delete()
+                    upload_error = str(exc) or "Не удалось извлечь текст из файла."
+                else:
+                    return redirect("subject_materials", subject_id=subject.id)
 
-            return redirect("subject_materials", subject_id=subject.id)
+        if not file:
+            upload_error = "Выберите файл для загрузки."
 
     # список документов
     documents = subject.documents.all().order_by("-uploaded_at")
 
     return render(request, "core/subject_materials.html", {
         "subject": subject,
-        "documents": documents
+        "documents": documents,
+        "upload_error": upload_error,
     })
 
 
@@ -179,12 +273,11 @@ def add_subject(request):
 
             # 🔒 Проверка на существующий предмет
             if Subject.objects.filter(name=name, course=course, institute=institute).exists():
-                messages.error(request, "Предмет уже существует")
+                form.add_error(None, "Предмет уже существует")
             else:
                 subject = form.save(commit=False)
                 subject.teacher = teacher
                 subject.save()
-                messages.success(request, "Предмет успешно добавлен")
                 return redirect('teacher_profile')
     else:
         form = SubjectCreateForm()
@@ -193,36 +286,6 @@ def add_subject(request):
         'form': form
     })
 
-
-@login_required
-def add_subject_for_student(request):
-    student = StudentProfile.objects.get(user=request.user)
-
-    allowed_subjects = Subject.objects.filter(
-        course=student.course,
-        institute=student.institute
-    ).exclude(
-        students=student
-    )
-
-    if request.method == 'POST':
-        subject_id = request.POST.get('subject_id')
-
-        subject = Subject.objects.filter(
-            id=subject_id,
-            course=student.course,
-            institute=student.institute
-        ).first()
-
-        if not subject:
-            return HttpResponseForbidden("Нельзя добавить этот предмет")
-
-        student.subjects.add(subject)
-        return redirect('student_profile')
-
-    return render(request, 'core/add_subject_student.html', {
-        'subjects': allowed_subjects
-    })
 
 @login_required
 def student_chat(request, subject_id):
@@ -239,7 +302,10 @@ def student_chat(request, subject_id):
         subject=subject
     ).order_by("created_at")
 
-    documents = Document.objects.filter(subject=subject)
+    documents = [
+        {"name": _document_display_name(document)}
+        for document in Document.objects.filter(subject=subject).order_by("-uploaded_at")
+    ]
 
     return render(request, "core/student_chat.html", {
         "subject": subject,
@@ -275,10 +341,23 @@ def send_message(request, subject_id):
     )
     try:
         # Получаем ответ от RAG системы
-        answer_text = answer_question(question=question, subject=subject)
+        rag_result = answer_question(question=question, subject=subject)
+        answer_text = rag_result["answer"]
+        answer_sources = rag_result["sources"]
+        answer_text = _append_sources_to_answer(answer_text, answer_sources)
     except Exception as e:
         answer_text = "Произошла ошибка при обработке запроса."
-        print(f"RAG Error: {e}")  # Логируем ошибку
+        answer_sources = []
+        log_event(
+            logger,
+            logging.ERROR,
+            "rag_answer_failed",
+            subject_id=subject.id,
+            student_id=student.id,
+            question_length=len(question),
+            error=str(e),
+        )
+        logger.exception("rag_answer_failed_exception")
     
 
     # Сохраняем ответ системы
@@ -286,7 +365,8 @@ def send_message(request, subject_id):
         student=student,
         subject=subject,
         message=answer_text,
-        is_question=False
+        is_question=False,
+        sources=answer_sources,
     )
 
     # Возвращаем JSON с обоими сообщениями
@@ -295,12 +375,77 @@ def send_message(request, subject_id):
         "question": {
             "id": question_msg.id,
             "message": question_msg.message,
-            "time": question_msg.created_at.strftime("%H:%M")
+            "time": _message_time(question_msg.created_at)
         },
         "answer": {
             "id": answer_msg.id,
             "message": answer_msg.message,
-            "time": answer_msg.created_at.strftime("%H:%M")
+            "time": _message_time(answer_msg.created_at),
+            "sources": answer_msg.sources or [],
         }
     })
 
+
+@login_required
+@require_http_methods(["POST"])
+def send_message_direct_llm(request, subject_id):
+    try:
+        student = StudentProfile.objects.get(user=request.user)
+    except StudentProfile.DoesNotExist:
+        return JsonResponse({"error": "Доступ запрещен"}, status=403)
+
+    subject = get_object_or_404(Subject, id=subject_id, students=student)
+
+    data = json.loads(request.body)
+    question = data.get("question", "").strip()
+
+    if not question:
+        return JsonResponse({"error": "Введите вопрос"}, status=400)
+
+    question_msg = ChatMessage.objects.create(
+        student=student,
+        subject=subject,
+        message=question,
+        is_question=True
+    )
+
+    try:
+        prompt = (
+            "Ты отвечаешь студенту в учебном веб-приложении. "
+            "Дай краткий и понятный ответ на вопрос без использования внешнего контекста.\n\n"
+            f"Вопрос: {question}"
+        )
+        answer_text = ask_gigachat(prompt)
+    except Exception as e:
+        answer_text = "Произошла ошибка при обработке запроса."
+        log_event(
+            logger,
+            logging.ERROR,
+            "direct_llm_answer_failed",
+            subject_id=subject.id,
+            student_id=student.id,
+            question_length=len(question),
+            error=str(e),
+        )
+        logger.exception("direct_llm_answer_failed_exception")
+
+    answer_msg = ChatMessage.objects.create(
+        student=student,
+        subject=subject,
+        message=answer_text,
+        is_question=False
+    )
+
+    return JsonResponse({
+        "success": True,
+        "question": {
+            "id": question_msg.id,
+            "message": question_msg.message,
+            "time": _message_time(question_msg.created_at)
+        },
+        "answer": {
+            "id": answer_msg.id,
+            "message": answer_msg.message,
+            "time": _message_time(answer_msg.created_at)
+        }
+    })

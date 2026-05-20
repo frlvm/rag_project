@@ -4,6 +4,7 @@ from .models import StudentProfile, Subject, User
 
 from django import forms
 from .models import Document, User, StudentProfile, Subject
+from .services.subject_assignment import assign_matching_subjects_to_student
 
 
 class DocumentForm(forms.ModelForm):
@@ -31,6 +32,7 @@ class StudentRegistrationForm(forms.ModelForm):
 
         if commit:
             profile.save()
+            assign_matching_subjects_to_student(profile)
 
         return profile
     

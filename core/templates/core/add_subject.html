@@ -10,12 +10,10 @@
 
           <h1 class="h4 mb-4 text-center">Новый предмет</h1>
 
-          {% if messages %}
-            {% for message in messages %}
-              <div class="alert alert-{{ message.tags }}">
-                {{ message }}
-              </div>
-            {% endfor %}
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+              {{ form.non_field_errors }}
+            </div>
           {% endif %}
 
           <form method="post">

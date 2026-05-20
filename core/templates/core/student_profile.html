@@ -13,11 +13,6 @@
     </div>
   </div>
 
-  <a href="{% url 'add_subject_for_student' %}"
-     class="btn btn-outline-dark mb-4">
-    ＋ Добавить предмет
-  </a>
-
   <h4 class="mb-3">Мои предметы</h4>
 
   {% if subjects %}
@@ -32,7 +27,7 @@
       {% endfor %}
     </div>
   {% else %}
-    <p class="text-muted">Предметы пока не добавлены</p>
+    <p class="text-muted">Подходящие предметы пока не назначены</p>
   {% endif %}
 
 </div>

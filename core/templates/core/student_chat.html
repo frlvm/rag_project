@@ -1,4 +1,5 @@
 {% extends "core/base.html" %}
+{% load tz %}
 
 {% block content %}
 <div class="container-fluid mt-4">
@@ -26,8 +27,23 @@
                           {% endif %}"
                    style="max-width: 70%;">
                 {{ msg.message|linebreaks }}
+                {% if not msg.is_question and msg.sources and "Источники:" not in msg.message %}
+                  <div class="border-top mt-2 pt-2 small text-muted">
+                    <div class="fw-semibold mb-1">Источники:</div>
+                    {% for source in msg.sources %}
+                      <div class="text-break">
+                        {{ source.document_title }}
+                        {% if source.page_start and source.page_end and source.page_start != source.page_end %}
+                          , стр. {{ source.page_start }}-{{ source.page_end }}
+                        {% elif source.page_start %}
+                          , стр. {{ source.page_start }}
+                        {% endif %}
+                      </div>
+                    {% endfor %}
+                  </div>
+                {% endif %}
                 <div class="text-end small mt-1 opacity-75">
-                  {{ msg.created_at|time:"H:i" }}
+                  {{ msg.created_at|localtime|time:"H:i" }}
                 </div>
               </div>
             </div>
@@ -59,9 +75,22 @@
       </div>
     </div>
 
-   
+    <div class="col-lg-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-white">
+          <h6 class="mb-0">Загруженные файлы</h6>
+        </div>
+        <div class="card-body overflow-auto" style="max-height: 60vh;">
+          {% for document in documents %}
+            <div class="py-2 border-bottom text-break">
+              {{ document.name }}
+            </div>
+          {% empty %}
+            <p class="text-muted mb-0">Файлы пока не загружены</p>
+          {% endfor %}
+        </div>
+      </div>
     </div>
-
   </div>
 </div>
 
@@ -78,17 +107,27 @@ function scrollToBottom() {
     chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 // Создание HTML сообщения (Bootstrap стили)
-function createMessageHTML(message, isQuestion, time) {
+function createMessageHTML(message, isQuestion, time, sources = []) {
     const alignment = isQuestion ? 'justify-content-end' : '';
     const bgColor = isQuestion ? 'bg-dark text-white' : 'bg-light';
+    const messageHtml = escapeHtml(message).replace(/\n/g, '<br>');
     
     return `
         <div class="d-flex mb-3 ${alignment}">
             <div class="p-3 rounded ${bgColor}" style="max-width: 70%;">
-                ${message.replace(/\n/g, '<br>')}
+                ${messageHtml}
                 <div class="text-end small mt-1 opacity-75">
-                    ${time}
+                    ${escapeHtml(time)}
                 </div>
             </div>
         </div>
@@ -147,7 +186,7 @@ chatForm.addEventListener('submit', async function(e) {
 
             // Добавляем ответ
             chatMessages.insertAdjacentHTML('beforeend', 
-                createMessageHTML(data.answer.message, false, data.answer.time)
+                createMessageHTML(data.answer.message, false, data.answer.time, data.answer.sources)
             );
 
             // Очищаем поле

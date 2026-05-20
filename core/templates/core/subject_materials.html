@@ -12,11 +12,35 @@
   <div class="card shadow-sm mb-4">
     <div class="card-body">
       <h5 class="mb-3">Добавить материал</h5>
-      <form method="post" enctype="multipart/form-data" class="d-flex gap-2">
+      {% if upload_error %}
+        <div class="alert alert-secondary border mb-3">
+          {{ upload_error }}
+        </div>
+      {% endif %}
+      <form id="documentUploadForm" method="post" enctype="multipart/form-data" class="d-flex gap-2">
         {% csrf_token %}
-        <input type="file" name="file" class="form-control" required>
-        <button class="btn btn-dark">Загрузить</button>
+        <input id="documentFileInput" type="file" name="file" class="form-control" accept=".pdf,.docx,.txt" required>
+        <button id="documentUploadButton" class="btn btn-dark" type="submit">Загрузить</button>
       </form>
+      <div id="documentUploadStatus" class="border rounded bg-light text-muted d-none align-items-center gap-3 mt-3 mb-0 p-3">
+        <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
+        <div class="flex-grow-1">
+          <div id="documentUploadStatusTitle" class="fw-semibold text-dark">Идёт загрузка документа</div>
+          <div class="small">
+            Загружено: <span id="documentUploadPercent">0</span>%
+            <span class="ms-2">Прошло: <span id="documentUploadElapsed">0</span> сек.</span>
+          </div>
+          <div class="progress mt-2" style="height: 6px;">
+            <div id="documentUploadProgressBar"
+                 class="progress-bar bg-secondary"
+                 role="progressbar"
+                 style="width: 0%;"
+                 aria-valuenow="0"
+                 aria-valuemin="0"
+                 aria-valuemax="100"></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -51,4 +75,77 @@
   </div>
 
 </div>
+<script>
+const documentUploadForm = document.getElementById('documentUploadForm');
+const documentUploadButton = document.getElementById('documentUploadButton');
+const documentFileInput = document.getElementById('documentFileInput');
+const documentUploadStatus = document.getElementById('documentUploadStatus');
+const documentUploadStatusTitle = document.getElementById('documentUploadStatusTitle');
+const documentUploadElapsed = document.getElementById('documentUploadElapsed');
+const documentUploadPercent = document.getElementById('documentUploadPercent');
+const documentUploadProgressBar = document.getElementById('documentUploadProgressBar');
+
+if (documentUploadForm) {
+  documentUploadForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+
+    let elapsedSeconds = 0;
+    const formData = new FormData(documentUploadForm);
+    const request = new XMLHttpRequest();
+
+    documentUploadButton.disabled = true;
+    documentFileInput.disabled = true;
+    documentUploadButton.textContent = 'Обработка...';
+    documentUploadStatus.classList.remove('d-none');
+    documentUploadStatus.classList.add('d-flex');
+
+    const elapsedTimer = setInterval(() => {
+      elapsedSeconds += 1;
+      documentUploadElapsed.textContent = elapsedSeconds;
+    }, 1000);
+
+    request.upload.addEventListener('progress', (progressEvent) => {
+      if (!progressEvent.lengthComputable) {
+        return;
+      }
+
+      const percent = Math.round((progressEvent.loaded / progressEvent.total) * 100);
+      documentUploadPercent.textContent = percent;
+      documentUploadProgressBar.style.width = `${percent}%`;
+      documentUploadProgressBar.setAttribute('aria-valuenow', percent);
+
+      if (percent >= 100) {
+        documentUploadStatusTitle.textContent = 'Файл загружен, идёт обработка документа';
+      }
+    });
+
+    request.addEventListener('load', () => {
+      clearInterval(elapsedTimer);
+
+      if (request.status >= 200 && request.status < 400) {
+        document.open();
+        document.write(request.responseText);
+        document.close();
+        return;
+      }
+
+      documentUploadStatusTitle.textContent = 'Не удалось загрузить документ';
+      documentUploadButton.disabled = false;
+      documentFileInput.disabled = false;
+      documentUploadButton.textContent = 'Загрузить';
+    });
+
+    request.addEventListener('error', () => {
+      clearInterval(elapsedTimer);
+      documentUploadStatusTitle.textContent = 'Не удалось загрузить документ';
+      documentUploadButton.disabled = false;
+      documentFileInput.disabled = false;
+      documentUploadButton.textContent = 'Загрузить';
+    });
+
+    request.open('POST', documentUploadForm.action || window.location.href);
+    request.send(formData);
+  });
+}
+</script>
 {% endblock %}
