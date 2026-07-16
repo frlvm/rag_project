@@ -6,13 +6,6 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 import csv
 from django import forms
-
-from django.db import transaction
-
-from django.urls import path
-from django.shortcuts import render, redirect
-from django.contrib import messages
-import csv
 from io import TextIOWrapper
 
 
@@ -134,9 +127,6 @@ class CSVUploadMixin:
             if not csv_file:
                 messages.error(request, "Файл не выбран")
                 return redirect(request.path)
-
-            file = TextIOWrapper(csv_file.file, encoding='utf-8')
-            reader = csv.DictReader(file)
 
             if "student" in request.path:
                 return import_students_from_csv(request, csv_file)

@@ -41,6 +41,11 @@ LOGIN_URL = "/login/"
 LOGIN_REDIRECT_URL = '/student/profile/'
 
 GIGACHAT_CREDENTIALS = os.getenv("GIGACHAT_CREDENTIALS")
+RAG_RELEVANCE_DISTANCE_THRESHOLD = float(
+    os.getenv("RAG_RELEVANCE_DISTANCE_THRESHOLD", "0.45")
+)
+RAG_CHUNK_SIZE = int(os.getenv("RAG_CHUNK_SIZE", "300"))
+RAG_CHUNK_OVERLAP = int(os.getenv("RAG_CHUNK_OVERLAP", "50"))
 
 # Application definition
 

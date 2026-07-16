@@ -19,7 +19,7 @@
       {% endif %}
       <form id="documentUploadForm" method="post" enctype="multipart/form-data" class="d-flex gap-2">
         {% csrf_token %}
-        <input id="documentFileInput" type="file" name="file" class="form-control" accept=".pdf,.docx,.txt" required>
+        <input id="documentFileInput" type="file" name="file" class="form-control" accept=".pdf,.docx" required>
         <button id="documentUploadButton" class="btn btn-dark" type="submit">Загрузить</button>
       </form>
       <div id="documentUploadStatus" class="border rounded bg-light text-muted d-none align-items-center gap-3 mt-3 mb-0 p-3">

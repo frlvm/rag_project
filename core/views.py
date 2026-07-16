@@ -1,15 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required, permission_required
-from .forms import DocumentForm, StudentRegistrationForm, SubjectCreateForm
-from .models import Document, Subject, StudentProfile, TeacherProfile, ChatMessage, Course, Institute, TextChunk, User
-from django.contrib.auth import logout
+from django.contrib.auth.decorators import login_required
+from .forms import StudentRegistrationForm, SubjectCreateForm
+from .models import Document, Subject, StudentProfile, TeacherProfile, ChatMessage, TextChunk, User
 from django.contrib.auth.views import LoginView
 from core.services.rag_pipeline import answer_question
-from core.services.text_extraction import extract_text
-from core.services.text_cleaning import clean_text
-from core.services.text_chunking import split_into_chunks
 from core.services.document_processor import DocumentTextExtractionError, process_document
-from django.http import HttpResponseForbidden, HttpResponse
+from django.http import HttpResponseForbidden
 from django.urls import reverse
 from django.contrib import messages
 from django.http import JsonResponse
@@ -17,10 +13,8 @@ from django.views.decorators.http import require_http_methods
 import json
 import logging
 from time import perf_counter
-from django import forms
-import csv
-from core.services.vector_store import ChromaVectorStore  # проверь путь
-from django.contrib.auth import authenticate, login
+from core.services.vector_store import ChromaVectorStore
+from django.contrib.auth import authenticate
 from core.services.logging_utils import log_event, print_document_delete_event
 from core.services.gigachat_client import ask_gigachat
 from django.utils import timezone
@@ -28,7 +22,7 @@ from pathlib import Path
 
 
 logger = logging.getLogger("core.rag")
-SUPPORTED_DOCUMENT_EXTENSIONS = {".pdf", ".docx", ".txt"}
+SUPPORTED_DOCUMENT_EXTENSIONS = {".pdf", ".docx"}
 
 
 def _message_time(value):
@@ -185,7 +179,7 @@ def subject_materials(request, subject_id):
         if file:
             file_extension = Path(file.name).suffix.lower()
             if file_extension not in SUPPORTED_DOCUMENT_EXTENSIONS:
-                upload_error = "Неподдерживаемый формат файла. Можно загрузить PDF, Word (.docx) или TXT."
+                upload_error = "Неподдерживаемый формат файла. Можно загрузить PDF или Word (.docx)."
             else:
                 document = Document.objects.create(
                     title=file.name,

@@ -4,6 +4,7 @@ import logging
 from django.conf import settings
 from threading import Lock
 import shutil
+from pathlib import Path
 from .logging_utils import log_event
 
 
@@ -82,6 +83,85 @@ class ChromaVectorStore:
             where={"subject_id": str(subject_id)},
             include=["documents", "metadatas", "distances"]
         )
+
+    def rebuild_subject_from_postgres(self, subject_id, batch_size=100):
+        from core.models import TextChunk
+        from core.services.embeddings import embed_text
+
+        subject_id = str(subject_id)
+
+        with self._lock:
+            self.collection.delete(where={"subject_id": subject_id})
+
+            chunks = (
+                TextChunk.objects
+                .filter(document__subject_id=subject_id)
+                .select_related("document", "document__subject")
+                .order_by("id")
+            )
+            total_chunks = chunks.count()
+            processed = 0
+
+            ids = []
+            documents = []
+            embeddings = []
+            metadatas = []
+
+            for chunk in chunks.iterator(chunk_size=batch_size):
+                document = chunk.document
+                file_path = document.file.name if document.file else document.title
+                source_type = Path(file_path).suffix.lower().lstrip(".")
+
+                metadata = {
+                    "chunk_id": str(chunk.id),
+                    "document_id": str(document.id),
+                    "document_title": str(document.title),
+                    "subject_id": str(document.subject.id),
+                    "chunk_index": chunk.chunk_index,
+                    "source_type": source_type,
+                }
+                if chunk.page_start is not None:
+                    metadata["page_start"] = chunk.page_start
+                if chunk.page_end is not None:
+                    metadata["page_end"] = chunk.page_end
+
+                ids.append(str(chunk.id))
+                documents.append(chunk.content)
+                embeddings.append(embed_text(chunk.content))
+                metadatas.append(metadata)
+
+                if len(ids) >= batch_size:
+                    self.collection.upsert(
+                        ids=ids,
+                        documents=documents,
+                        embeddings=embeddings,
+                        metadatas=metadatas,
+                    )
+                    processed += len(ids)
+                    ids.clear()
+                    documents.clear()
+                    embeddings.clear()
+                    metadatas.clear()
+
+            if ids:
+                self.collection.upsert(
+                    ids=ids,
+                    documents=documents,
+                    embeddings=embeddings,
+                    metadatas=metadatas,
+                )
+                processed += len(ids)
+
+            log_event(
+                logger,
+                logging.WARNING,
+                "chroma_subject_rebuilt_from_postgres",
+                subject_id=subject_id,
+                postgres_chunk_count=total_chunks,
+                restored_chunk_count=processed,
+            )
+
+            return processed
 
 
     # -----------------------------

@@ -1,5 +1,8 @@
 import logging
 
+from chromadb.errors import InternalError
+from django.conf import settings
+
 from core.models import Document
 
 from .embeddings import embed_query
@@ -40,26 +43,71 @@ def _fill_document_titles(metadatas):
     return metadatas
 
 
+def _query_subject_chunks(vector_store, question_embedding, subject, top_k):
+    return vector_store.query(
+        query_embedding=question_embedding,
+        subject_id=str(subject.id),
+        top_k=top_k
+    )
+
+
 def retrieve_chunks(question, subject, top_k=5):
     vector_store = ChromaVectorStore()
 
     question_embedding = embed_query(question)
 
-    results = vector_store.query(
-        query_embedding=question_embedding,
-        subject_id=str(subject.id),
-        top_k=top_k
-    )
+    try:
+        results = _query_subject_chunks(vector_store, question_embedding, subject, top_k)
+    except InternalError as exc:
+        log_event(
+            logger,
+            logging.ERROR,
+            "chroma_query_failed_subject_rebuild_started",
+            subject_id=subject.id,
+            top_k=top_k,
+            question_length=len(question),
+            error=str(exc),
+        )
+        restored_chunk_count = vector_store.rebuild_subject_from_postgres(subject.id)
+        log_event(
+            logger,
+            logging.WARNING,
+            "chroma_query_retry_after_subject_rebuild",
+            subject_id=subject.id,
+            top_k=top_k,
+            question_length=len(question),
+            restored_chunk_count=restored_chunk_count,
+        )
+        results = _query_subject_chunks(vector_store, question_embedding, subject, top_k)
     documents = results.get("documents", [])
     metadatas = results.get("metadatas", [])
+    distances = results.get("distances", [])
 
-    # нормализация
     if documents and isinstance(documents[0], list):
         documents = documents[0]
     if metadatas and isinstance(metadatas[0], list):
         metadatas = metadatas[0]
+    if distances and isinstance(distances[0], list):
+        distances = distances[0]
 
-    metadatas = _fill_document_titles(metadatas)
+    distance_threshold = settings.RAG_RELEVANCE_DISTANCE_THRESHOLD
+    raw_results_count = len(documents)
+    filtered_documents = []
+    filtered_metadatas = []
+
+    for index, document in enumerate(documents):
+        metadata = dict(metadatas[index] or {}) if index < len(metadatas) else {}
+        distance = distances[index] if index < len(distances) else None
+
+        if distance is not None:
+            metadata["distance"] = distance
+
+        if distance is None or distance <= distance_threshold:
+            filtered_documents.append(document)
+            filtered_metadatas.append(metadata)
+
+    documents = filtered_documents
+    metadatas = _fill_document_titles(filtered_metadatas)
 
     log_event(
         logger,
@@ -68,16 +116,17 @@ def retrieve_chunks(question, subject, top_k=5):
         subject_id=subject.id,
         top_k=top_k,
         question_length=len(question),
+        raw_results_count=raw_results_count,
         results_count=len(documents),
+        filtered_out_count=raw_results_count - len(documents),
+        distance_threshold=distance_threshold,
+        min_distance=min(distances) if distances else None,
     )
 
     return documents, metadatas
 
 
 def normalize_sources(metadatas):
-    """
-    Превращает metadatas из ChromaDB в удобный список источников без дублей.
-    """
     metadatas = _fill_document_titles(metadatas)
     unique_sources = []
     seen = set()

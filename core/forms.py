@@ -1,8 +1,5 @@
 from django import forms
 
-from .models import StudentProfile, Subject, User
-
-from django import forms
 from .models import Document, User, StudentProfile, Subject
 from .services.subject_assignment import assign_matching_subjects_to_student
 

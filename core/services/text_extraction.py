@@ -20,8 +20,6 @@ def extract_text(file_path: str) -> list[dict]:
         return extract_text_from_pdf(file_path)
     if ext == ".docx":
         return extract_text_from_docx(file_path)
-    if ext == ".txt":
-        return extract_text_from_txt(file_path)
 
     raise ValueError("Неподдерживаемый формат файла")
 
@@ -133,27 +131,6 @@ def extract_text_from_docx(file_path: str) -> list[dict]:
             blocks.append(text)
 
     text = "\n\n".join(blocks)
-
-    return [{
-        "page_start": None,
-        "page_end": None,
-        "text": text
-    }]
-
-
-def extract_text_from_txt(file_path: str) -> list[dict]:
-    encodings = ("utf-8-sig", "utf-8", "cp1251")
-
-    for encoding in encodings:
-        try:
-            with open(file_path, encoding=encoding) as file:
-                text = file.read()
-            break
-        except UnicodeDecodeError:
-            continue
-    else:
-        with open(file_path, encoding="utf-8", errors="replace") as file:
-            text = file.read()
 
     return [{
         "page_start": None,
