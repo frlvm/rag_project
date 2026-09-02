@@ -29,7 +29,7 @@ class ChromaVectorStore:
 
     def _initialize(self):
         # Папка хранения
-        self.chroma_path = os.path.join(settings.BASE_DIR, "chroma_storage")
+        self.chroma_path = settings.CHROMA_PATH
         os.makedirs(self.chroma_path, exist_ok=True)
 
         # Persistent клиент

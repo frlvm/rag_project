@@ -59,11 +59,17 @@
                   <a href="{{ doc.file.url }}" target="_blank"
                      class="btn btn-outline-secondary">Открыть</a>
                 {% endif %}
-                <a href="{% url 'delete_document' doc.id %}"
-                   class="btn btn-outline-danger"
-                   onclick="return confirm('Удалить документ?')">
-                  Удалить
-                </a>
+                <form
+                  method="post"
+                  action="{% url 'delete_document' doc.id %}"
+                  class="d-inline"
+                  onsubmit="return confirm('Удалить документ?')"
+                >
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-outline-danger">
+                    Удалить
+                  </button>
+                </form>
               </div>
             </li>
           {% endfor %}

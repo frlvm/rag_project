@@ -26,14 +26,26 @@ SUPPORTED_DOCUMENT_EXTENSIONS = {".pdf", ".docx"}
 
 
 def _message_time(value):
+    """Что делает: форматирует дату сообщения в локальное время.
+    Входные данные: value — дата и время сообщения.
+    Выходные данные: строка времени в формате «ЧЧ:ММ».
+    """
     return timezone.localtime(value).strftime("%H:%M")
 
 
 def _document_display_name(document):
+    """Что делает: получает название документа без расширения файла.
+    Входные данные: document — объект Document.
+    Выходные данные: строка с названием документа.
+    """
     return Path(document.title).stem
 
 
 def _format_source(source):
+    """Что делает: формирует подпись источника с названием документа и страницами.
+    Входные данные: source — словарь с данными источника.
+    Выходные данные: строка с подписью источника или пустая строка.
+    """
     title = source.get("document_title")
     if not title:
         return ""
@@ -49,6 +61,10 @@ def _format_source(source):
 
 
 def _append_sources_to_answer(answer_text, sources):
+    """Что делает: добавляет список источников к тексту ответа.
+    Входные данные: answer_text — текст ответа; sources — список источников.
+    Выходные данные: строка ответа с источниками или исходный текст.
+    """
     formatted_sources = [
         formatted
         for formatted in (_format_source(source) for source in sources or [])
@@ -63,9 +79,18 @@ def _append_sources_to_answer(answer_text, sources):
 
 
 class CustomLoginView(LoginView):
+    """Что делает: обрабатывает авторизацию и перенаправление пользователя.
+    Входные данные: HTTP-запрос и данные формы, обрабатываемые LoginView.
+    Выходные данные: HTTP-ответ с формой входа или перенаправлением.
+    """
+
     template_name = "core/login.html"
 
     def form_invalid(self, form):
+        """Что делает: выводит понятную причину ошибки авторизации.
+        Входные данные: form — невалидная форма входа.
+        Выходные данные: HTTP-ответ с формой и сообщением об ошибке.
+        """
         username = self.request.POST.get("username")
         password = self.request.POST.get("password")
 
@@ -85,6 +110,10 @@ class CustomLoginView(LoginView):
         return super().form_invalid(form)
 
     def get_success_url(self):
+        """Что делает: выбирает профиль для перехода после входа согласно роли.
+        Входные данные: авторизованный пользователь из self.request.user.
+        Выходные данные: строка URL профиля преподавателя или студента.
+        """
         user = self.request.user
 
         if user.role == 'teacher':
@@ -92,7 +121,12 @@ class CustomLoginView(LoginView):
         return reverse('student_profile')
 
 @login_required
+@require_http_methods(["POST"])
 def delete_document(request, doc_id):
+    """Что делает: удаляет документ, файл и связанные чанки из хранилищ.
+    Входные данные: request — HTTP-запрос; doc_id — идентификатор документа.
+    Выходные данные: редирект к материалам предмета либо HTTP 403/405.
+    """
     started_at = perf_counter()
     document = get_object_or_404(Document, id=doc_id)
 
@@ -116,7 +150,6 @@ def delete_document(request, doc_id):
     )
     chroma_found_ids = [str(chunk_id) for chunk_id in chroma_chunks.get("ids", [])]
 
-    # 🔥 1. Удаляем из Chroma ТОЛЬКО этот документ
     vector_store.collection.delete(
         where={"document_id": str(document.id)}
     )
@@ -128,12 +161,10 @@ def delete_document(request, doc_id):
         for chunk_id in chroma_remaining_chunks.get("ids", [])
     ]
 
-    # 🔥 2. Удаляем чанки из БД
     chunks = TextChunk.objects.filter(document=document)
     postgresql_found_ids = [str(chunk_id) for chunk_id in chunks.values_list("id", flat=True)]
     deleted_count, _ = chunks.delete()
 
-    # 🔥 3. Удаляем файл и документ
     document.file.delete(save=False)
     document.delete()
 
@@ -158,7 +189,10 @@ def delete_document(request, doc_id):
 
 @login_required
 def subject_materials(request, subject_id):
-    # проверка преподавателя
+    """Что делает: показывает материалы предмета и обрабатывает загрузку документов.
+    Входные данные: request — GET- или POST-запрос; subject_id — идентификатор предмета.
+    Выходные данные: HTML-страница, редирект после загрузки или HTTP 403.
+    """
     try:
         teacher = TeacherProfile.objects.get(user=request.user)
     except TeacherProfile.DoesNotExist:
@@ -172,7 +206,6 @@ def subject_materials(request, subject_id):
 
     upload_error = None
 
-    # загрузка документа
     if request.method == "POST":
         file = request.FILES.get("file")
 
@@ -188,7 +221,6 @@ def subject_materials(request, subject_id):
                 )
 
                 try:
-                    # RAG-подготовка
                     process_document(document)
                 except DocumentTextExtractionError as exc:
                     document.file.delete(save=False)
@@ -200,7 +232,6 @@ def subject_materials(request, subject_id):
         if not file:
             upload_error = "Выберите файл для загрузки."
 
-    # список документов
     documents = subject.documents.all().order_by("-uploaded_at")
 
     return render(request, "core/subject_materials.html", {
@@ -216,12 +247,20 @@ def subject_materials(request, subject_id):
 
 @login_required
 def index(request):
+    """Что делает: перенаправляет пользователя в профиль согласно его роли.
+    Входные данные: request — HTTP-запрос авторизованного пользователя.
+    Выходные данные: HTTP-редирект в профиль преподавателя или студента.
+    """
     if request.user.role == 'teacher':
         return redirect('/teacher/profile/')
     return redirect('/student/profile/')
 
 
 def student_register(request):
+    """Что делает: отображает и обрабатывает регистрацию студента.
+    Входные данные: request — GET-запрос или POST-запрос с данными формы.
+    Выходные данные: HTML-страница формы или редирект на страницу входа.
+    """
     if request.method == 'POST':
         form = StudentRegistrationForm(request.POST)
         if form.is_valid():
@@ -235,6 +274,10 @@ def student_register(request):
 
 @login_required
 def student_profile(request):
+    """Что делает: отображает профиль студента и доступные предметы.
+    Входные данные: request — HTTP-запрос авторизованного пользователя.
+    Выходные данные: HTML-страница профиля студента.
+    """
     student = StudentProfile.objects.get(user=request.user)
 
     return render(request, 'core/student_profile.html', {
@@ -245,6 +288,10 @@ def student_profile(request):
 
 @login_required
 def teacher_profile(request):
+    """Что делает: отображает профиль преподавателя и его предметы.
+    Входные данные: request — HTTP-запрос авторизованного пользователя.
+    Выходные данные: HTML-страница профиля преподавателя.
+    """
     teacher = TeacherProfile.objects.get(user=request.user)
 
     return render(request, 'core/teacher_profile.html', {
@@ -256,6 +303,10 @@ def teacher_profile(request):
 
 @login_required
 def add_subject(request):
+    """Что делает: отображает форму и создаёт новый предмет преподавателя.
+    Входные данные: request — GET-запрос или POST-запрос с данными предмета.
+    Выходные данные: HTML-страница формы или редирект в профиль преподавателя.
+    """
     teacher = TeacherProfile.objects.get(user=request.user)
 
     if request.method == 'POST':
@@ -265,7 +316,6 @@ def add_subject(request):
             course = form.cleaned_data['course']
             institute = form.cleaned_data['institute']
 
-            # 🔒 Проверка на существующий предмет
             if Subject.objects.filter(name=name, course=course, institute=institute).exists():
                 form.add_error(None, "Предмет уже существует")
             else:
@@ -283,6 +333,10 @@ def add_subject(request):
 
 @login_required
 def student_chat(request, subject_id):
+    """Что делает: показывает чат, историю сообщений и документы предмета.
+    Входные данные: request — HTTP-запрос; subject_id — идентификатор предмета.
+    Выходные данные: HTML-страница чата, HTTP 403 или HTTP 404.
+    """
     try:
         student = StudentProfile.objects.get(user=request.user)
     except StudentProfile.DoesNotExist:
@@ -290,7 +344,6 @@ def student_chat(request, subject_id):
 
     subject = get_object_or_404(Subject, id=subject_id, students=student)
     
-    # История сообщений
     messages_history = ChatMessage.objects.filter(
         student=student,
         subject=subject
@@ -308,10 +361,13 @@ def student_chat(request, subject_id):
     })
 
 
-# НОВАЯ view - для AJAX запросов
 @login_required
-@require_http_methods(["POST"])  # Только POST запросы
+@require_http_methods(["POST"])
 def send_message(request, subject_id):
+    """Что делает: получает вопрос, формирует RAG-ответ и сохраняет сообщения.
+    Входные данные: request — POST-запрос с JSON-полем question; subject_id — идентификатор предмета.
+    Выходные данные: JSON с вопросом и ответом или JSON с ошибкой.
+    """
     try:
         student = StudentProfile.objects.get(user=request.user)
     except StudentProfile.DoesNotExist:
@@ -319,14 +375,12 @@ def send_message(request, subject_id):
 
     subject = get_object_or_404(Subject, id=subject_id, students=student)
     
-    # Получаем вопрос из AJAX запроса
     data = json.loads(request.body)
     question = data.get("question", "").strip()
 
     if not question:
         return JsonResponse({"error": "Введите вопрос"}, status=400)
 
-    # Сохраняем вопрос студента
     question_msg = ChatMessage.objects.create(
         student=student,
         subject=subject,
@@ -334,7 +388,6 @@ def send_message(request, subject_id):
         is_question=True
     )
     try:
-        # Получаем ответ от RAG системы
         rag_result = answer_question(question=question, subject=subject)
         answer_text = rag_result["answer"]
         answer_sources = rag_result["sources"]
@@ -354,7 +407,6 @@ def send_message(request, subject_id):
         logger.exception("rag_answer_failed_exception")
     
 
-    # Сохраняем ответ системы
     answer_msg = ChatMessage.objects.create(
         student=student,
         subject=subject,
@@ -363,7 +415,6 @@ def send_message(request, subject_id):
         sources=answer_sources,
     )
 
-    # Возвращаем JSON с обоими сообщениями
     return JsonResponse({
         "success": True,
         "question": {
@@ -383,6 +434,10 @@ def send_message(request, subject_id):
 @login_required
 @require_http_methods(["POST"])
 def send_message_direct_llm(request, subject_id):
+    """Что делает: получает вопрос, запрашивает прямой ответ LLM и сохраняет сообщения.
+    Входные данные: request — POST-запрос с JSON-полем question; subject_id — идентификатор предмета.
+    Выходные данные: JSON с вопросом и ответом или JSON с ошибкой.
+    """
     try:
         student = StudentProfile.objects.get(user=request.user)
     except StudentProfile.DoesNotExist:
