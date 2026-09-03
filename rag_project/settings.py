@@ -104,7 +104,11 @@ DATABASES = {
     }
 }
 
-CHROMA_PATH = os.getenv("CHROMA_PATH", BASE_DIR / "chroma_storage")
+CHROMA_HOST = os.getenv("CHROMA_HOST", "localhost")
+CHROMA_PORT = int(os.getenv("CHROMA_PORT", "8000"))
+CHROMA_SSL = os.getenv("CHROMA_SSL", "False").strip().lower() in {
+    "1", "true", "yes", "on"
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
@@ -143,9 +147,6 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-LOG_DIR = BASE_DIR / "logs"
-LOG_DIR.mkdir(exist_ok=True)
-
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -155,17 +156,16 @@ LOGGING = {
         },
     },
     'handlers': {
-        'rag_file': {
-            'class': 'logging.FileHandler',
-            'filename': LOG_DIR / 'rag.log',
+        'stdout': {
+            'class': 'logging.StreamHandler',
             'formatter': 'structured',
             'level': 'INFO',
-            'encoding': 'utf-8',
+            'stream': 'ext://sys.stdout',
         },
     },
     'loggers': {
         'core.rag': {
-            'handlers': ['rag_file'],
+            'handlers': ['stdout'],
             'level': 'INFO',
             'propagate': False,
         },

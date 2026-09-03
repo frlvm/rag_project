@@ -27,10 +27,7 @@ class Command(BaseCommand):
         collection_name = vector_store.collection.name
         self.stdout.write(f"Пересоздание коллекции ChromaDB: {collection_name}")
 
-        vector_store.client.delete_collection(collection_name)
-        vector_store.collection = vector_store.client.get_or_create_collection(
-            name=collection_name
-        )
+        vector_store.reset_collection()
 
         chunks = (
             TextChunk.objects

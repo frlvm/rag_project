@@ -5,7 +5,7 @@ from time import perf_counter
 from core.models import Document, TextChunk
 
 from .embeddings import embed_text
-from .logging_utils import log_event, print_document_upload_event
+from .logging_utils import log_document_upload_event, log_event
 from .text_cleaning import clean_text
 from .text_chunking import split_into_chunk_objects
 from .text_extraction import TextExtractionError, extract_text
@@ -268,7 +268,7 @@ def process_document(document):
         duration_ms=duration_ms,
     )
 
-    print_document_upload_event(
+    log_document_upload_event(
         document=document,
         first_chunk=first_chunk,
         last_chunk=last_chunk,

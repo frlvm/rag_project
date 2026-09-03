@@ -2,7 +2,7 @@ import logging
 from time import perf_counter
 
 from core.services.gigachat_client import ask_gigachat
-from core.services.logging_utils import log_event, print_rag_question_event
+from core.services.logging_utils import log_event, log_rag_question_event
 from core.services.prompt_builder import build_prompt
 from core.services.retriever import normalize_sources, retrieve_chunks
 
@@ -51,7 +51,7 @@ def answer_question(question, subject, top_k=5):
             question_length=len(question),
             total_duration_ms=total_duration_ms,
         )
-        print_rag_question_event(
+        log_rag_question_event(
             subject=subject,
             question=question,
             metadatas=metadatas,
@@ -93,7 +93,7 @@ def answer_question(question, subject, top_k=5):
         llm_duration_ms=round((perf_counter() - llm_started_at) * 1000, 2),
         total_duration_ms=total_duration_ms,
     )
-    print_rag_question_event(
+    log_rag_question_event(
         subject=subject,
         question=question,
         metadatas=metadatas,

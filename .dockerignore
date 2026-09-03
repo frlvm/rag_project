@@ -1,0 +1,8 @@
+.env
+.git
+__pycache__
+*.pyc
+media
+logs
+chroma_storage
+rag_db

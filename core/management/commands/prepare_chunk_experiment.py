@@ -8,7 +8,7 @@ from django.core.files import File
 from django.core.management.base import BaseCommand, CommandError
 
 from core.models import Document, Subject, TextChunk
-from core.services.logging_utils import print_document_delete_event
+from core.services.logging_utils import log_document_delete_event
 from core.services.vector_store import ChromaVectorStore
 
 
@@ -160,7 +160,7 @@ class Command(BaseCommand):
             document.file.delete(save=False)
             document.delete()
 
-            print_document_delete_event(
+            log_document_delete_event(
                 document_data=document_data,
                 postgresql_found_ids=postgresql_found_ids,
                 postgresql_deleted_ids=postgresql_found_ids if deleted_count else [],

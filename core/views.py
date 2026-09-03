@@ -15,7 +15,7 @@ import logging
 from time import perf_counter
 from core.services.vector_store import ChromaVectorStore
 from django.contrib.auth import authenticate
-from core.services.logging_utils import log_event, print_document_delete_event
+from core.services.logging_utils import log_document_delete_event, log_event
 from core.services.gigachat_client import ask_gigachat
 from django.utils import timezone
 from pathlib import Path
@@ -23,6 +23,15 @@ from pathlib import Path
 
 logger = logging.getLogger("core.rag")
 SUPPORTED_DOCUMENT_EXTENSIONS = {".pdf", ".docx"}
+
+
+@require_http_methods(["GET"])
+def health_check(request):
+    """Что делает: сообщает, что Django запущен и обрабатывает HTTP-запросы.
+    Входные данные: request — GET-запрос проверки состояния приложения.
+    Выходные данные: JSON со статусом ok и HTTP 200.
+    """
+    return JsonResponse({"status": "ok"})
 
 
 def _message_time(value):
@@ -169,7 +178,7 @@ def delete_document(request, doc_id):
     document.delete()
 
     duration_ms = round((perf_counter() - started_at) * 1000, 2)
-    print_document_delete_event(
+    log_document_delete_event(
         document_data=document_data,
         postgresql_found_ids=postgresql_found_ids,
         postgresql_deleted_ids=postgresql_found_ids if deleted_count else [],

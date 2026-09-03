@@ -4,6 +4,9 @@ from contextlib import contextmanager
 from time import perf_counter
 
 
+logger = logging.getLogger("core.rag")
+
+
 def _serialize_fields(fields):
     return json.dumps(fields, ensure_ascii=False, default=str, sort_keys=True)
 
@@ -19,40 +22,41 @@ def _short_text(value, limit=140):
     return f"{text[:limit].rstrip()}..."
 
 
-def print_document_upload_event(document, first_chunk, last_chunk, chunk_count, unit_count, duration_ms):
+def log_document_upload_event(
+    document,
+    first_chunk,
+    last_chunk,
+    chunk_count,
+    unit_count,
+    duration_ms,
+):
     subject = document.subject
     teacher = subject.teacher
     file_size = document.file.size if document.file else 0
 
-    print()
-    print("Событие: загрузка документа")
-    print("Данные о документе:")
-    print(f"- ID документа: {document.id}")
-    print(f"- Название файла: {document.title}")
-    print(f"- Размер файла: {file_size} байт")
-    print(f"- Предмет: {subject.name} (ID: {subject.id})")
-    print(f"- Преподаватель: {teacher.full_name}")
-    print(f"- Количество текстовых блоков: {unit_count}")
-    print(f"- Количество добавленных чанков: {chunk_count}")
-
-    if first_chunk:
-        print("Первая запись о добавлении чанка:")
-        print(f"- ID чанка: {first_chunk.id}")
-        print(f"- Индекс чанка: {first_chunk.chunk_index}")
-        print(f"- Начало текста: {_short_text(first_chunk.content)}")
-
-    if last_chunk:
-        print("Последняя запись о добавлении чанка:")
-        print(f"- ID чанка: {last_chunk.id}")
-        print(f"- Индекс чанка: {last_chunk.chunk_index}")
-        print(f"- Начало текста: {_short_text(last_chunk.content)}")
-
-    print("Загрузка успешно завершена")
-    print(f"Время выполнения события: {duration_ms} мс")
-    print()
+    log_event(
+        logger,
+        logging.INFO,
+        "document_upload_summary",
+        document_id=document.id,
+        document_title=document.title,
+        file_size=file_size,
+        subject_id=subject.id,
+        subject_name=subject.name,
+        teacher_id=teacher.id,
+        unit_count=unit_count,
+        chunk_count=chunk_count,
+        first_chunk_id=first_chunk.id if first_chunk else None,
+        first_chunk_index=first_chunk.chunk_index if first_chunk else None,
+        first_chunk_preview=_short_text(first_chunk.content) if first_chunk else None,
+        last_chunk_id=last_chunk.id if last_chunk else None,
+        last_chunk_index=last_chunk.chunk_index if last_chunk else None,
+        last_chunk_preview=_short_text(last_chunk.content) if last_chunk else None,
+        duration_ms=duration_ms,
+    )
 
 
-def print_document_delete_event(
+def log_document_delete_event(
     document_data,
     postgresql_found_ids,
     postgresql_deleted_ids,
@@ -61,28 +65,28 @@ def print_document_delete_event(
     chroma_remaining_ids,
     duration_ms,
 ):
-    print()
-    print("Событие: удаление документа")
-    print("Данные о документе:")
-    print(f"- ID документа: {document_data['document_id']}")
-    print(f"- Название файла: {document_data['document_title']}")
-    print(f"- Путь к файлу: {document_data['file_path']}")
-    print(f"- Размер файла: {document_data['file_size']} байт")
-    print(f"- ID предмета: {document_data['subject_id']}")
-    print(f"- Предмет: {document_data['subject_name']}")
-    print(f"- Преподаватель: {document_data['teacher_name']}")
-    print("Удаление связанных чанков:")
-    print(f"- ChromaDB: найдены ID чанков: {', '.join(chroma_found_ids) if chroma_found_ids else 'нет'}")
-    print(f"- ChromaDB: удалены ID чанков: {', '.join(chroma_deleted_ids) if chroma_deleted_ids else 'нет'}")
-    print(f"- ChromaDB: осталось ID чанков после удаления: {', '.join(chroma_remaining_ids) if chroma_remaining_ids else 'нет'}")
-    print(f"- PostgreSQL: найдены ID чанков: {', '.join(postgresql_found_ids) if postgresql_found_ids else 'нет'}")
-    print(f"- PostgreSQL: удалены ID чанков: {', '.join(postgresql_deleted_ids) if postgresql_deleted_ids else 'нет'}")
-    print("Удаление документа успешно завершено")
-    print(f"Время выполнения события: {duration_ms} мс")
-    print()
+    log_event(
+        logger,
+        logging.INFO,
+        "document_delete_summary",
+        **document_data,
+        postgresql_found_ids=postgresql_found_ids,
+        postgresql_deleted_ids=postgresql_deleted_ids,
+        chroma_found_ids=chroma_found_ids,
+        chroma_deleted_ids=chroma_deleted_ids,
+        chroma_remaining_ids=chroma_remaining_ids,
+        duration_ms=duration_ms,
+    )
 
 
-def print_rag_question_event(subject, question, metadatas, answer, duration_ms, documents=None):
+def log_rag_question_event(
+    subject,
+    question,
+    metadatas,
+    answer,
+    duration_ms,
+    documents=None,
+):
     documents = documents or []
     teacher = subject.teacher
     chunk_ids = [
@@ -101,24 +105,24 @@ def print_rag_question_event(subject, question, metadatas, answer, duration_ms, 
         if meta.get("subject_id")
     })
 
-    print()
-    print("Событие: обработка вопроса к RAG")
-    print("Данные о запросе:")
-    print(f"- ID предмета: {subject.id}")
-    print(f"- Предмет: {subject.name}")
-    print(f"- Преподаватель: {teacher.full_name}")
-    print(f"- Вопрос: {_short_text(question, limit=180)}")
-    print(f"- Количество используемых чанков: {len(metadatas)}")
-    print(f"- ID используемых чанков: {', '.join(map(str, chunk_ids)) if chunk_ids else 'нет'}")
-    print(f"- Документы среди найденных чанков: {', '.join(document_titles) if document_titles else 'нет'}")
-    print(f"- ID предмета в метаданных чанков: {', '.join(subject_ids) if subject_ids else 'нет'}")
-    print(f"- Длина ответа: {len(answer) if answer else 0} символов")
-    print("Ответ системы:")
-    print(answer or "Ответ не сформирован")
-
-    print("Обработка вопроса успешно завершена")
-    print(f"Время выполнения события: {duration_ms} мс")
-    print()
+    log_event(
+        logger,
+        logging.INFO,
+        "rag_question_summary",
+        subject_id=subject.id,
+        subject_name=subject.name,
+        teacher_id=teacher.id,
+        question_length=len(question) if question else 0,
+        question_preview=_short_text(question, limit=180),
+        chunk_count=len(metadatas),
+        chunk_ids=chunk_ids,
+        document_titles=document_titles,
+        metadata_subject_ids=subject_ids,
+        retrieved_document_count=len(documents),
+        answer_length=len(answer) if answer else 0,
+        answer_preview=_short_text(answer, limit=180),
+        duration_ms=duration_ms,
+    )
 
 
 @contextmanager

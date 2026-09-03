@@ -7,7 +7,8 @@ def root_redirect(request):
     return redirect("/login/")
 
 urlpatterns = [
-    path('', root_redirect, name="root_redirect"), 
+    path('', root_redirect, name="root_redirect"),
+    path('health/', views.health_check, name='health_check'),
     path('chat/<int:subject_id>/', views.student_chat, name='student_chat'),
     path('login/', views.CustomLoginView.as_view(
         template_name='core/login.html'

@@ -1,0 +1,36 @@
+services:
+  postgres_db:
+    restart: unless-stopped
+    container_name: postgres
+    image: postgres:15-alpine
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    env_file:
+      - .env
+    volumes:
+      - ./volumes/postgres/:/var/lib/postgresql/data
+  chroma_db:
+    restart: unless-stopped
+    container_name: chroma
+    image: chromadb/chroma:1.5.0
+    volumes:
+      - ./volumes/chroma/:/data
+  django_app:
+    restart: unless-stopped
+    container_name: django-web
+    build: .
+    image: rag-roject:latest
+    env_file:
+      - .env
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      postgres_db:
+        condition: service_healthy 
+      chroma_db:
+        condition: service_started
+
+

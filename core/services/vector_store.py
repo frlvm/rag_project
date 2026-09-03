@@ -1,9 +1,7 @@
-import os
 import chromadb
 import logging
 from django.conf import settings
 from threading import Lock
-import shutil
 from pathlib import Path
 from .logging_utils import log_event
 
@@ -12,7 +10,7 @@ logger = logging.getLogger("core.rag")
 
 class ChromaVectorStore:
     """
-    Единый persistent-клиент ChromaDB.
+    Единый HTTP-клиент ChromaDB.
     Singleton-подход — клиент создаётся один раз.
     """
 
@@ -23,21 +21,22 @@ class ChromaVectorStore:
         if cls._instance is None:
             with cls._lock:
                 if cls._instance is None:
-                    cls._instance = super().__new__(cls)
-                    cls._instance._initialize()
+                    instance = super().__new__(cls)
+                    instance._initialize()
+                    cls._instance = instance
         return cls._instance
 
     def _initialize(self):
-        # Папка хранения
-        self.chroma_path = settings.CHROMA_PATH
-        os.makedirs(self.chroma_path, exist_ok=True)
+        self.chroma_host = settings.CHROMA_HOST
+        self.chroma_port = settings.CHROMA_PORT
+        self.chroma_ssl = settings.CHROMA_SSL
 
-        # Persistent клиент
-        self.client = chromadb.PersistentClient(
-            path=self.chroma_path
+        self.client = chromadb.HttpClient(
+            host=self.chroma_host,
+            port=self.chroma_port,
+            ssl=self.chroma_ssl,
         )
 
-        # Коллекция
         self.collection = self.client.get_or_create_collection(
             name="subjects_collection"
         )
@@ -46,7 +45,9 @@ class ChromaVectorStore:
             logger,
             logging.INFO,
             "chroma_initialized",
-            chroma_path=self.chroma_path,
+            chroma_host=self.chroma_host,
+            chroma_port=self.chroma_port,
+            chroma_ssl=self.chroma_ssl,
             collection_name="subjects_collection",
             collection_count=self.collection.count(),
         )
@@ -182,43 +183,18 @@ class ChromaVectorStore:
             }
         )
 
-    # -----------------------------
-    # Полная очистка
-    # -----------------------------
     def reset_collection(self):
-    # 1. Закрыть/забыть текущую коллекцию
-        self.collection = None
+        with self._lock:
+            collection_name = self.collection.name
+            self.client.delete_collection(name=collection_name)
+            self.collection = self.client.get_or_create_collection(
+                name=collection_name
+            )
 
-    # 2. Удалить директорию Chroma
-        persist_dir = "./chroma_db"  # ← укажи свой путь
-
-        if os.path.exists(persist_dir):
-            shutil.rmtree(persist_dir)
             log_event(
                 logger,
                 logging.WARNING,
-                "chroma_directory_removed",
-                persist_dir=persist_dir,
+                "chroma_collection_reset",
+                collection_name=collection_name,
+                collection_count=self.collection.count(),
             )
-
-    # 3. Создать новый клиент
-        import chromadb
-        from chromadb.config import Settings
-
-        self.client = chromadb.Client(
-            Settings(persist_directory=persist_dir)
-        )
-
-    # 4. Создать коллекцию заново
-        self.collection = self.client.get_or_create_collection(
-            name="subjects_collection"
-        )
-
-        data = self.collection.get()
-        log_event(
-            logger,
-            logging.WARNING,
-            "chroma_collection_reset",
-            collection_name="subjects_collection",
-            collection_count=len(data["ids"]),
-        )
