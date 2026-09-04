@@ -30,6 +30,7 @@ DEBUG = bool(os.getenv("DJANGO_DEBUG"))
 
 
 ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "").split(",")
+CSRF_TRUSTED_ORIGINS = os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",")
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.getenv("MEDIA_ROOT", BASE_DIR / "media")
@@ -144,6 +145,7 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
+STATIC_ROOT = os.getenv("STATIC_ROOT")
 
 STATIC_URL = 'static/'
 
