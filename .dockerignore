@@ -1,8 +1,11 @@
-.env
+.env*
+.venv/
 .git
-__pycache__
+.mypy_cache/
 *.pyc
-media
-logs
-chroma_storage
-rag_db
+media/
+volumes/
+data/
+README.md
+nginx/
+.gitignore

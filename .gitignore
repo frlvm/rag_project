@@ -32,4 +32,9 @@ Thumbs.db
 # *.pth
 # *.h5
 chroma_storage/
+
+# Database files
 volumes/
+data/
+logs/
+.mypy_cache/
