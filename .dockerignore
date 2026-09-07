@@ -6,3 +6,5 @@ media
 logs
 chroma_storage
 rag_db
+volumes/
+data/
