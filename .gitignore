@@ -38,3 +38,4 @@ volumes/
 data/
 logs/
 .mypy_cache/
+backups/

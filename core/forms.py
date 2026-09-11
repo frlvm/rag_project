@@ -21,7 +21,8 @@ class StudentRegistrationForm(forms.ModelForm):
     def save(self, commit=True):
         user = User.objects.create_user(
             username=self.cleaned_data['username'],
-            password=self.cleaned_data['password']
+            password=self.cleaned_data['password'],
+            role='student'
         )
 
         profile = super().save(commit=False)

@@ -95,6 +95,26 @@ class CustomLoginView(LoginView):
 
     template_name = "core/login.html"
 
+    def form_valid(self, form):
+        """Что делает: проверяет наличие профиля для роли перед авторизацией.
+        Входные данные: form — валидная форма с найденным пользователем.
+        Выходные данные: редирект после входа или форма с сообщением об ошибке.
+        """
+        user = form.get_user()
+        profile_exists = (
+            user.role == "student"
+            and StudentProfile.objects.filter(user=user).exists()
+        ) or (
+            user.role == "teacher"
+            and TeacherProfile.objects.filter(user=user).exists()
+        )
+
+        if not profile_exists:
+            messages.error(self.request, "Пользователь не найден")
+            return super().form_invalid(form)
+
+        return super().form_valid(form)
+
     def form_invalid(self, form):
         """Что делает: выводит понятную причину ошибки авторизации.
         Входные данные: form — невалидная форма входа.

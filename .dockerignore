@@ -5,7 +5,6 @@
 *.pyc
 media/
 volumes/
-data/
 README.md
-nginx/
 .gitignore
+backups/

@@ -25,14 +25,15 @@ services:
     image: rag-project:latest
     env_file:
       - .env
-    ports:
-      - "8000:8000"
     depends_on:
       postgres:
         condition: service_healthy 
       chroma:
         condition: service_started
     volumes:
+      - type: volume
+        source: media
+        target: /data/media/
       - type: bind
         source: ./data/static/
         target: /data/static/
@@ -40,7 +41,7 @@ services:
   nginx:
     restart: unless-stopped
     container_name: nginx
-    image: nginx:latest
+    image: nginx:alpine3.24
     ports:
       - 8080:80
     volumes:
@@ -54,6 +55,7 @@ services:
         read_only: true
     depends_on:
       - django
-        
+volumes:
+  media:      
 
 
